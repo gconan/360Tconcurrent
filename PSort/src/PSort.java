@@ -36,19 +36,6 @@ public class PSort {
 		if(i < end){
 			parallelSort(A, i, end);
 		}
-		/*while(i <= end){
-			if(A[i] < pivot){
-				less[l] = A[i];
-				l++;
-				i++;
-			}
-			if(A[i] > pivot){
-				greater[g] = A[i];
-				g++;
-				i++;
-			}
-			
-		}*/
 		return;
 	}
 	
