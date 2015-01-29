@@ -8,9 +8,9 @@ public class test {
 //		parallelSort(A,0, A.length);
 //		print(A);
 		int[] b = {1,12,5,26,7,14,3,7,2,22,124,21342,2153125,53262,24,346,78,421,93,225,1,6,24};
-		print(b);
 		PSort.parallelSort(b,0, b.length);
 		print(b);
+		
 	}
 	
 	private static void print(int[] a) {
