@@ -24,6 +24,7 @@ public class PSearch implements Callable<Integer>{
 			try {
 				int result = check.get();
 				if(result != -1){
+					//need to shutdown threadppol?
 					return result;
 				}
 			} catch (InterruptedException e) {
