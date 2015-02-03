@@ -14,16 +14,43 @@ public class PSearch implements Callable<Integer>{
 	    this.find = find;
 	    this.place = place;
 	  }
-	public static int parallelSearch(int x, int[] A, int numThreads) {
+	public static int parallelSearch(int x, int[] A, int numThreads) { //add math to divide up array into parallelSearch and take it out of call()
 		//your implementation goes here	
 		ExecutorService es = Executors.newSingleThreadExecutor();
 		PSearch[] test = new PSearch[numThreads];
 		for(int i = 0; i < numThreads; i++){
-			test[i] = new PSearch(x, A, numThreads, i); //send call something to tell which part of the array to search
+			test[i] = new PSearch(x, A, numThreads, i); 
+			
+			//moving math up here
+			int len = A.length;
+			//System.out.println(len);
+			int size = len/numThreads;
+			//System.out.println(size);
+			int rem = len%numThreads;
+			//System.out.println(rem);
+			int start = size*i;
+			while(((size*i) + size) > (len + 1)){
+				size--;
+			}
+			if(rem > 0){
+				if(rem > i){
+					size++;
+					if(i != 0){
+						start = start + i;
+					}
+				}
+				if(i >= rem){
+					start = start + rem;
+				}
+				
+			}
+			
 			Future<Integer> check = es.submit(test[i]);
 			try {
 				int result = check.get();
 				if(result != -1){
+					es.shutdown ();
+			        threadPool.shutdown();
 					return result;
 				}
 			} catch (InterruptedException e) {
@@ -42,20 +69,16 @@ public class PSearch implements Callable<Integer>{
 	}
 	
 	public Integer call(){
+		
+		//MATH
 		int len = b.length;
 		//System.out.println(len);
 		int size = len/n;
 		//System.out.println(size);
 		int rem = len%n;
 		//System.out.println(rem);
-		for(int i = 0; i < len; i++){
-			//need to figure out how to search only part of the array
-		}
-		int start;
-		/*if(start !=0 ){
-			start++;
-		}*/
-		start = size*place;
+		int start = size*place;
+		/*
 		while(((size*place) + size) > (len + 1)){
 			size--;
 		}
@@ -71,6 +94,8 @@ public class PSearch implements Callable<Integer>{
 			}
 			
 		}
+		*/
+		
 		
 		//System.out.println(place + " " + len + " " + rem + " " + size + " " + start);
 		for(int j = start; j < start+size; j++){
@@ -84,10 +109,6 @@ public class PSearch implements Callable<Integer>{
 	}
 	
 	public static void main(String[]args){
-//		int[] A = {5,8,3,2,7,45,56,67,12,2,32};
-//		print(A);
-//		parallelSort(A,0, A.length);
-//		print(A);
 		int[] b = {1,12,5,26,7,14,3,7,2,22,124,21342,2153125,53262,24,346,78,421,93,225,1,6,24};
 		parallelSearch(1, b, 8);
 	}
