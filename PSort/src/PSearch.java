@@ -49,8 +49,12 @@ public class PSearch implements Callable<Integer>{
 			try {
 				int result = check.get();
 				if(result != -1){
+<<<<<<< HEAD
 					es.shutdown ();
 			        threadPool.shutdown();
+=======
+					//need to shutdown threadppol?
+>>>>>>> b30c5e363f74d8d79a7748ce44a3337a695e063c
 					return result;
 				}
 			} catch (InterruptedException e) {
