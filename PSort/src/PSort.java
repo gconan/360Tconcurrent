@@ -57,7 +57,7 @@ public class PSort implements Runnable{
 
 	@Override
 	public void run() {
-		parallelSort(A, begin, end);
+		parallelSort(this.A, this.begin, this.end);
 		
 	}
 	
