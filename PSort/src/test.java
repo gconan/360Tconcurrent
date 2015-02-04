@@ -1,15 +1,25 @@
+import java.util.Random;
+
 
 public class test {
 	
 	
 	public static void main(String[]args){
-//		int[] A = {5,8,3,2,7,45,56,67,12,2,32};
-//		print(A);
-//		parallelSort(A,0, A.length);
-//		print(A);
-		int[] b = {1,12,5,26,7,14,3,7,2,22,124,21342,2153125,53262,24,346,78,421,93,225,1,6,24};
-		PSort.parallelSort(b,0, b.length);
-		print(b);
+		
+		int[] a = {1,12,5,26,7,14,3,7,2,22,124,21342,2153125,53262,24,346,78,421,93,225,1,6,24};
+		System.out.println("Psort");
+		print(a);
+		PSort.parallelSort(a, 0, a.length);
+		print(a);
+		for(int i=0; i<a.length-1; i++){
+			if(a[i]>a[i+1]){
+				System.out.println("not sorted");
+				return;
+			}
+		}
+		System.out.println("sorted");
+		
+		System.out.println(PSearch.parallelSearch(-2, a, Runtime.getRuntime().availableProcessors()));
 		
 	}
 	
@@ -22,21 +32,4 @@ public class test {
 		System.out.print("}\n");
 		
 	}
-
-//	public static void main(String[] args) {
-//		// TODO Auto-generated method stub
-//		int[] A = new int[] {1,12,5,26,7,14,3,7,2,22,124,21342,2153125,53262,24,346,78,421,93,225,1,6,24};
-//		int i = 0;
-//		while(i < A.length){
-//			System.out.println(A[i]);
-//			i++;
-//		}
-//		PSort.parallelSort(A, 0, A.length);
-//		i = 0;
-//		while(i < A.length){
-//			System.out.println(A[i]);
-//			i++;
-//		}
-//	}
-
 }

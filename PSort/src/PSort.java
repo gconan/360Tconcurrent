@@ -48,12 +48,6 @@ public class PSort implements Runnable{
 			A[i+j]=greaterThan.get(j);
 		}
 		
-		/*PSort f1 = new PSort(A,begin, pivotIndex);
-        PSort f2 = new PSort(A, pivotIndex+1, end);
-		es.execute(f1);
-		es.execute(f2);*/
-		
-		
 		PSort f1 = new PSort(A,begin, pivotIndex);
         Thread t1 = new Thread(f1);
         PSort f2 = new PSort(A, pivotIndex+1, end);
@@ -64,17 +58,9 @@ public class PSort implements Runnable{
         try {
 			es.awaitTermination(10, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
+			System.out.println("Uh-Oh!");
 			e.printStackTrace();
 		}
-        /*t1.start();
-        t2.start();
-        try{
-        	t1.join();
-        	t2.join();
-        }catch(Exception e){
-        	System.out.println("boooo");
-        }*/
 	}
 
 	@Override
@@ -82,6 +68,4 @@ public class PSort implements Runnable{
 		parallelSort(this.A, this.begin, this.end);
 		
 	}
-	
-
 }
