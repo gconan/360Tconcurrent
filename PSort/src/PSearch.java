@@ -49,12 +49,9 @@ public class PSearch implements Callable<Integer>{
 			try {
 				int result = check.get();
 				if(result != -1){
-<<<<<<< HEAD
 					es.shutdown ();
 			        threadPool.shutdown();
-=======
 					//need to shutdown threadppol?
->>>>>>> b30c5e363f74d8d79a7748ce44a3337a695e063c
 					return result;
 				}
 			} catch (InterruptedException e) {
@@ -112,9 +109,9 @@ public class PSearch implements Callable<Integer>{
 		return -1;
 	}
 	
-	public static void main(String[]args){
+	/*public static void main(String[]args){
 		int[] b = {1,12,5,26,7,14,3,7,2,22,124,21342,2153125,53262,24,346,78,421,93,225,1,6,24};
 		parallelSearch(1, b, 8);
-	}
+	}*/
 
 }

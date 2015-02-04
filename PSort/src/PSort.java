@@ -1,8 +1,11 @@
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 
 public class PSort implements Runnable{
-	
+	public static ExecutorService threadPool = Executors.newCachedThreadPool();
 	private int[] A;
 	private int begin;
 	private int end;
@@ -14,7 +17,11 @@ public class PSort implements Runnable{
 	}
 	
 	public static void parallelSort(int[] A, int begin, int end) {
-		if((end-begin)<=1)return;
+		ExecutorService es = Executors.newSingleThreadExecutor();
+		if((end-begin)<=1){
+			return;
+		}
+		
 		int pivot = A[begin];
 		int pivotIndex;
 		
@@ -41,18 +48,33 @@ public class PSort implements Runnable{
 			A[i+j]=greaterThan.get(j);
 		}
 		
+		/*PSort f1 = new PSort(A,begin, pivotIndex);
+        PSort f2 = new PSort(A, pivotIndex+1, end);
+		es.execute(f1);
+		es.execute(f2);*/
+		
+		
 		PSort f1 = new PSort(A,begin, pivotIndex);
         Thread t1 = new Thread(f1);
         PSort f2 = new PSort(A, pivotIndex+1, end);
         Thread t2 = new Thread(f2);
-        t1.start();
+       	es.execute(t1);
+        es.execute(t2);
+        es.shutdown();
+        try {
+			es.awaitTermination(10, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        /*t1.start();
         t2.start();
         try{
         	t1.join();
         	t2.join();
         }catch(Exception e){
         	System.out.println("boooo");
-        }
+        }*/
 	}
 
 	@Override
