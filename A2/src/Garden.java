@@ -1,3 +1,4 @@
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -25,6 +26,7 @@ public class Garden {
 	final int max;
 	private int emptyHoles;
 	private int seededHoles;
+	private Semaphore shovelMutex = new Semaphore(1);
 	
 	Lock lock = new ReentrantLock();
 	Condition holes = lock.newCondition();

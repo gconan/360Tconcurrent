@@ -17,7 +17,7 @@ import java.util.concurrent.Semaphore;
 public class FairReadWriteLock {
 	
 	
-	Semaphore mutex = new Semaphore(1); //dont think this is right
+	Semaphore mutex = new Semaphore(1); //this is analogous to a binarySemaphore
 	
 	
 	
