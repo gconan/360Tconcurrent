@@ -29,9 +29,9 @@ public class Garden {
 	private Semaphore shovelMutex = new Semaphore(1);
 	
 	Lock lock = new ReentrantLock();
-	Condition holes = lock.newCondition();
-	Condition seeds = lock.newCondition();
-	
+	Condition digAvail = lock.newCondition();
+	Condition seedAvail = lock.newCondition();
+	Condition fillAvail = lock.newCondition();
 	
 	public Garden(int MAX){
 		this.max = MAX;
@@ -39,28 +39,77 @@ public class Garden {
 		seededHoles = 0;
 	}
 	
-	public void startDigging(){
-		
+	public void startDigging() throws InterruptedException{
+		lock.lock();
+		try{
+			while(emptyHoles >= max){
+				digAvail.await();
+			}
+			shovelMutex.acquire();
+		}
+		finally{
+			lock.unlock();
+		}
 	}
 	
 	public void doneDigging(){
-		
+		lock.lock();
+		try{
+			emptyHoles++;
+			shovelMutex.release();
+			seedAvail.signal();
+		}
+		finally{
+			lock.unlock();
+		}
 	}
 	
-	public void startSeeding(){
-		
+	public void startSeeding() throws InterruptedException{
+		lock.lock();
+		try{
+			while(emptyHoles <= 0){
+				seedAvail.await();
+			}
+		}
+		finally{
+			lock.unlock();
+		}
 	}
 	
 	public void doneSeeding(){
-		
+		lock.lock();
+		try{
+			seededHoles++;
+			fillAvail.signal();
+		}
+		finally{
+			lock.unlock();
+		}
 	}
 	
-	public void startFilling(){
-		
+	public void startFilling() throws InterruptedException{
+		lock.lock();
+		try{
+			while(seededHoles <= 0){
+				fillAvail.await();
+			}
+			shovelMutex.acquire();
+		}
+		finally{
+			lock.unlock();
+		}
 	}
 	
 	public void doneFilling(){
-		
+		lock.lock();
+		try{
+			seededHoles--;
+			emptyHoles--;
+			shovelMutex.release();
+		}
+		finally{
+			lock.unlock();
+		}
 	}
 	
 }
