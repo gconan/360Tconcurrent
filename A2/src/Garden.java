@@ -22,11 +22,19 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class Garden {
 	
+	final int max;
+	private int emptyHoles;
+	private int seededHoles;
+	
 	Lock lock = new ReentrantLock();
-	Condition emptyHoles = lock.newCondition();
-
+	Condition holes = lock.newCondition();
+	Condition seeds = lock.newCondition();
+	
+	
 	public Garden(int MAX){
-		
+		this.max = MAX;
+		emptyHoles = 0;
+		seededHoles = 0;
 	}
 	
 	public void startDigging(){
