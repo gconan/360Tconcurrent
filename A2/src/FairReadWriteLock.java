@@ -1,4 +1,7 @@
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * Follows these constraints:
@@ -16,21 +19,81 @@ import java.util.concurrent.Semaphore;
  */
 public class FairReadWriteLock {
 	
+	private AtomicBoolean readLocked;
+	private AtomicBoolean writeLock;	//false if taken; true if available.
+	private int numReaders;
 	
-	Semaphore mutex = new Semaphore(1); //this is analogous to a binarySemaphore
-	
-	
-	
+	public FairReadWriteLock(){
+		readLocked = new AtomicBoolean(false);
+		writeLock = new AtomicBoolean(true);
+		numReaders = 0;
+		
+	}
 	
 	public void beginRead(){
+		if(writeLock.compareAndSet(true, false)){	//if the write lock is available and set to not available
+			if(readLocked.compareAndSet(false, true)){
+				numReaders++;
+				writeLock.compareAndSet(false, true);
+				readLocked.compareAndSet(true, false);
+				notifyAll();
+			}else{
+				try {
+					writeLock.compareAndSet(false, true);
+					wait();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			//read
+				
+		}else{
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		
 	}
 	
 	public void endRead(){
+		if(readLocked.compareAndSet(false, true)){
+			numReaders--;
+			readLocked.compareAndSet(true, false);
+			notifyAll();
+		}else{
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		
 	}
 	
 	public void beginWrite(){
+		if(writeLock.compareAndSet(false, true)){
+			if(readLocked.compareAndSet(false, true)){
+				numReaders++;
+				readLocked.compareAndSet(true, false);
+				notifyAll();
+			}else{
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			//read
+				
+		}else{
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		
 	}
 

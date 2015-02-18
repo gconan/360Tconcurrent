@@ -7,10 +7,4 @@ public class Driver {
 		
 	}
 
-	
-	Thread Newton{
-		while(){
-			
-		}
-	}
 }
