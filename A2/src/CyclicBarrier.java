@@ -29,13 +29,14 @@ public class CyclicBarrier {
 		mutex.acquire();
 		partiesArrived++;
 		mutex.release();
-		if(numberOfParties==0){
+		if(numberOfParties-partiesArrived==0){
 			notifyAll();
-		
+			partiesArrived = 0;
+			return 0;
 		}else{
 			wait();
 		}
-		return numberOfParties;
+		return numberOfParties-partiesArrived;
 		
 	}
 }
