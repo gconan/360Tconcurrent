@@ -1,4 +1,3 @@
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -43,8 +42,6 @@ public class FairReadWriteLock {
 			}
 			notifyAll();
 			//READ
-//			System.out.println("reading "+Thread.currentThread());
-//			System.out.println("numReaders = "+numReaders +"\n");
 	}
 	
 	public synchronized void endRead(){
@@ -67,8 +64,6 @@ public class FairReadWriteLock {
 		}
 			lock.set(true);
 			//WRITE
-//			System.out.println("writing "+Thread.currentThread());
-//			System.out.println("numReaders = "+numReaders +"\n");
 		
 	}
 

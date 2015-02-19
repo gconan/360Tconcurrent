@@ -4,7 +4,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -125,9 +124,7 @@ public class GardenTester {
 		// ensure we submit out of order
 		Future<?> f1 = threadpool.submit(mary);
 		TimeUnit.SECONDS.sleep(1);
-		Future<?> f2 = threadpool.submit(ben);
 		TimeUnit.SECONDS.sleep(1);
-		Future<?> f3 = threadpool.submit(newt);
 
 		// only have to get f1, because this should imply that others are done.
 		f1.get();
