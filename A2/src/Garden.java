@@ -38,6 +38,13 @@ public class Garden {
 	private AtomicInteger totalSeeds = new AtomicInteger(0);
 	private AtomicInteger totalFilled = new AtomicInteger(0);
 	
+	public Garden(int MAX){
+		this.max = MAX;
+		dugHoles = 0;
+		seededHoles = 0;
+	}
+	
+//*********************Implemented Interface Methods*****************************
 	public int totalHolesDugByNewton(){
 		return totalHoles.get();
 	}
@@ -50,13 +57,7 @@ public class Garden {
 		return totalFilled.get();
 	}
 	
-	
-	public Garden(int MAX){
-		this.max = MAX;
-		dugHoles = 0;
-		seededHoles = 0;
-	}
-	
+//**********************"Worker" Methods*********************************	
 	public void startDigging() throws InterruptedException{
 		lock.lock();
 		try{

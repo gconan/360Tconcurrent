@@ -26,6 +26,7 @@ public class FairReadWriteLock {
 		
 	}
 	
+//*************************READER************************************
 	public synchronized void beginRead(){
 		
 			while(numReaders<=0 && lock.get()){
@@ -54,6 +55,8 @@ public class FairReadWriteLock {
 			notifyAll();
 	}
 	
+	
+//***************************WRITER*********************************************
 	public synchronized void beginWrite(){
 		while(numReaders>0 || lock.get()){
 			try {
