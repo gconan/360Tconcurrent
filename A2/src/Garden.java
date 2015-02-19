@@ -27,8 +27,6 @@ public class Garden {
 	final int max;
 	private int dugHoles;
 	private int seededHoles;
-	private int filledHoles;
-	private int emptyHoles;
 	private Semaphore shovelMutex = new Semaphore(1);
 	
 	Lock lock = new ReentrantLock();
@@ -57,8 +55,6 @@ public class Garden {
 		this.max = MAX;
 		dugHoles = 0;
 		seededHoles = 0;
-		filledHoles = 0;
-		emptyHoles = 0;
 	}
 	
 	public void startDigging() throws InterruptedException{
@@ -79,7 +75,6 @@ public class Garden {
 		try{
 			totalHoles.incrementAndGet();
 			dugHoles++;
-			emptyHoles++;
 			shovelMutex.release();
 			seedAvail.signal();
 		}
@@ -104,7 +99,6 @@ public class Garden {
 		lock.lock();
 		try{
 			totalSeeds.incrementAndGet();
-			emptyHoles--;
 			seededHoles++;
 			fillAvail.signal();
 		}
@@ -132,7 +126,6 @@ public class Garden {
 			totalFilled.incrementAndGet();
 			seededHoles--;
 			dugHoles--;
-			emptyHoles--;
 			shovelMutex.release();
 			digAvail.signal();
 		}
