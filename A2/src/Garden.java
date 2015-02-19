@@ -1,4 +1,5 @@
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -24,8 +25,10 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Garden {
 	
 	final int max;
-	private int emptyHoles;
+	private int dugHoles;
 	private int seededHoles;
+	private int filledHoles;
+	private int emptyHoles;
 	private Semaphore shovelMutex = new Semaphore(1);
 	
 	Lock lock = new ReentrantLock();
@@ -33,16 +36,35 @@ public class Garden {
 	Condition seedAvail = lock.newCondition();
 	Condition fillAvail = lock.newCondition();
 	
+	private AtomicInteger totalHoles = new AtomicInteger(0);
+	private AtomicInteger totalSeeds = new AtomicInteger(0);
+	private AtomicInteger totalFilled = new AtomicInteger(0);
+	
+	public int totalHolesDugByNewton(){
+		return totalHoles.get();
+	}
+
+	public int totalHolesSeededByBenjamin(){
+		return totalSeeds.get();
+	}
+
+	public int totalHolesFilledByMary(){
+		return totalFilled.get();
+	}
+	
+	
 	public Garden(int MAX){
 		this.max = MAX;
-		emptyHoles = 0;
+		dugHoles = 0;
 		seededHoles = 0;
+		filledHoles = 0;
+		emptyHoles = 0;
 	}
 	
 	public void startDigging() throws InterruptedException{
 		lock.lock();
 		try{
-			while(emptyHoles >= max){
+			while(dugHoles >= max){
 				digAvail.await();
 			}
 			shovelMutex.acquire();
@@ -55,6 +77,8 @@ public class Garden {
 	public void doneDigging(){
 		lock.lock();
 		try{
+			totalHoles.incrementAndGet();
+			dugHoles++;
 			emptyHoles++;
 			shovelMutex.release();
 			seedAvail.signal();
@@ -67,7 +91,7 @@ public class Garden {
 	public void startSeeding() throws InterruptedException{
 		lock.lock();
 		try{
-			while(emptyHoles <= 0){
+			while(dugHoles <= 0){
 				seedAvail.await();
 			}
 		}
@@ -79,6 +103,8 @@ public class Garden {
 	public void doneSeeding(){
 		lock.lock();
 		try{
+			totalSeeds.incrementAndGet();
+			emptyHoles--;
 			seededHoles++;
 			fillAvail.signal();
 		}
@@ -103,9 +129,12 @@ public class Garden {
 	public void doneFilling(){
 		lock.lock();
 		try{
+			totalFilled.incrementAndGet();
 			seededHoles--;
+			dugHoles--;
 			emptyHoles--;
 			shovelMutex.release();
+			digAvail.signal();
 		}
 		finally{
 			lock.unlock();
