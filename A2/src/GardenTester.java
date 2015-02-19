@@ -1,3 +1,5 @@
+import static org.junit.Assert.*;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -5,6 +7,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+
+import org.junit.Test;
 
 public class GardenTester {
 	static int order = 0;
@@ -149,11 +153,12 @@ public class GardenTester {
 		
 		// should not be able to dig until we fill one
 		f1 = threadpool.submit(n);
-		
+		System.out.println("Time to seed");
 		// okay, seed and fill that hole
 		threadpool.submit(new TestBenjamin(g));
+		System.out.println("Seeded");
 		threadpool.submit(new TestMary(g));
-		
+		System.out.println("Seeded and filled");
 		// should be able to get f1 now, and it should happen last.
 		f1.get();
 		
