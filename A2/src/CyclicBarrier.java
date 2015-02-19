@@ -6,8 +6,7 @@ public class CyclicBarrier {
 	private final int numberOfParties;
 	private int partiesArrived;
 	private Semaphore mutex;
-	private Semaphore everyone;
-	private Semaphore resetting;
+	private Semaphore everyoneArrived;
 
 	/**
 	 * creates a new cyclicbarrier that will trip when the given number of parties (thread) are waiting upon it
@@ -17,8 +16,7 @@ public class CyclicBarrier {
 		numberOfParties = parties;
 		mutex = new Semaphore(1);
 		partiesArrived = 0;
-		everyone = new Semaphore(1);
-		resetting = new Semaphore(1);
+		everyoneArrived = new Semaphore(0);
 	}
 	
 	/**
@@ -32,26 +30,16 @@ public class CyclicBarrier {
 	 */
 	int await() throws InterruptedException{
 		mutex.acquire();
-		
-		//if(partiesArrived == 0) { //first to arrive
-		//	everyone.acquire(); //note, first one will try to acquire everyone TWICE, this is intended
-		//}
-		
-		partiesArrived++;
-		int result = numberOfParties - partiesArrived;
-		//mutex.release();
-		if(numberOfParties - partiesArrived == 0){
-			//notifyAll();
-			partiesArrived--;
-			//everyone.release();
-			mutex.release();
-			return 0;
-		}
+			partiesArrived++;
+			int result = numberOfParties - partiesArrived;
 		mutex.release();
 		
-		//everyone.acquire(); //wait for everyone before exiting
-		partiesArrived++;
-		//everyone.release();
+		if(everyoneArrived.getQueueLength()<numberOfParties-1){
+			everyoneArrived.acquire();
+		}else{
+			everyoneArrived.release(numberOfParties-1);
+			partiesArrived=0;//reset
+		}
 
 		return result;
 		
