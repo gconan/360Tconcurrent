@@ -1,13 +1,19 @@
+import java.util.concurrent.Semaphore;
+
 
 public class CyclicBarrier {
+	
+	private final int numberOfParties;
+	private int partiesArrived;
+	private Semaphore mutex;
 
 	/**
 	 * creates a new cyclicbarrier that will trip when the given number of parties (thread) are waiting upon it
-	 * 
 	 * @param parties
 	 */
 	public CyclicBarrier (int parties){
-		
+		numberOfParties = parties;
+		mutex = new Semaphore(1);
 	}
 	
 	/**
@@ -20,8 +26,16 @@ public class CyclicBarrier {
 	 * @throws InterruptedException
 	 */
 	int await() throws InterruptedException{
+		mutex.acquire();
+		partiesArrived++;
+		mutex.release();
+		if(numberOfParties==0){
+			notifyAll();
 		
-		return 0;
+		}else{
+			wait();
+		}
+		return numberOfParties;
 		
 	}
 }

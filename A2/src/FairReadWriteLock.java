@@ -19,85 +19,56 @@ import java.util.concurrent.locks.LockSupport;
  */
 public class FairReadWriteLock {
 	
-	private AtomicBoolean readLocked;
-	private AtomicBoolean writeLock;	//false if taken; true if available.
+	private Semaphore mutex;
+	private Semaphore writeLock;
 	private int numReaders;
 	
 	public FairReadWriteLock(){
-		readLocked = new AtomicBoolean(false);
-		writeLock = new AtomicBoolean(true);
+		mutex = new Semaphore(1);
+		writeLock = new Semaphore(1);
 		numReaders = 0;
 		
 	}
 	
 	public void beginRead(){
-		if(writeLock.compareAndSet(true, false)){	//if the write lock is available and set to not available
-			if(readLocked.compareAndSet(false, true)){
-				numReaders++;
-				writeLock.compareAndSet(false, true);
-				readLocked.compareAndSet(true, false);
-				notifyAll();
-			}else{
-				try {
-					writeLock.compareAndSet(false, true);
-					wait();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+		try {
+			mutex.acquire();
+			numReaders++;
+			
+			if(numReaders==1){
+				writeLock.acquire();
 			}
-			//read
-				
-		}else{
-			try {
-				wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			mutex.release();	//ensures that other read threads can access
+			//READ
+		} catch (InterruptedException e1) {
+			e1.printStackTrace();
 		}
 		
 	}
 	
 	public void endRead(){
-		if(readLocked.compareAndSet(false, true)){
+		try {
+			mutex.acquire();
 			numReaders--;
-			readLocked.compareAndSet(true, false);
-			notifyAll();
-		}else{
-			try {
-				wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+			if(numReaders==0){
+				writeLock.release();
 			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
-		
 	}
 	
 	public void beginWrite(){
-		if(writeLock.compareAndSet(false, true)){
-			if(readLocked.compareAndSet(false, true)){
-				numReaders++;
-				readLocked.compareAndSet(true, false);
-				notifyAll();
-			}else{
-				try {
-					wait();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-			//read
-				
-		}else{
-			try {
-				wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+		try {
+			writeLock.acquire();
+			//WRITE
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 		
 	}
 
 	public void endWrite(){
-		
+		writeLock.release();
 	}
 }
