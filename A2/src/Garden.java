@@ -58,13 +58,23 @@ public class Garden {
 	}
 	
 //**********************"Worker" Methods*********************************	
-	public void startDigging() throws InterruptedException{
+	public void startDigging(){
 		lock.lock();
 		try{
 			while(dugHoles >= max){
-				digAvail.await();
+				try {
+					digAvail.await();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
-			shovelMutex.acquire();
+			try {
+				shovelMutex.acquire();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		finally{
 			lock.unlock();
@@ -84,11 +94,16 @@ public class Garden {
 		}
 	}
 	
-	public void startSeeding() throws InterruptedException{
+	public void startSeeding(){
 		lock.lock();
 		try{
 			while(dugHoles <= 0){
-				seedAvail.await();
+				try {
+					seedAvail.await();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 		finally{
@@ -108,13 +123,23 @@ public class Garden {
 		}
 	}
 	
-	public void startFilling() throws InterruptedException{
+	public void startFilling(){
 		lock.lock();
 		try{
 			while(seededHoles <= 0){
-				fillAvail.await();
+				try {
+					fillAvail.await();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
-			shovelMutex.acquire();
+			try {
+				shovelMutex.acquire();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		finally{
 			lock.unlock();
