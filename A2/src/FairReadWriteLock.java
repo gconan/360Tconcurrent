@@ -1,7 +1,4 @@
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.LockSupport;
 
 /**
  * Follows these constraints:
@@ -38,8 +35,10 @@ public class FairReadWriteLock {
 			if(numReaders==1){
 				writeLock.acquire();
 			}
-			mutex.release();	//ensures that other read threads can access
+				//ensures that other read threads can access
 			//READ
+			System.out.println("reading"+Thread.currentThread());
+			mutex.release();
 		} catch (InterruptedException e1) {
 			e1.printStackTrace();
 		}
@@ -62,6 +61,7 @@ public class FairReadWriteLock {
 		try {
 			writeLock.acquire();
 			//WRITE
+			System.out.println("writing"+Thread.currentThread()); //TODO
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
