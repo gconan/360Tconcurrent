@@ -123,7 +123,7 @@ public class Server {
 		
 		@Override
 		public void run() {	//service client request
-			try {	//similar to serverThread on Proff github	
+			try {	//similar to serverThread on Professor Garg's github	
 				Scanner inputStream = new Scanner(sock.getInputStream());
 				PrintWriter outputStream = new PrintWriter(sock.getOutputStream());
 				String request = inputStream.nextLine();
@@ -198,7 +198,7 @@ public class Server {
 	 * @param args
 	 */
 	public static void main(String[] args){
-		Server server = new Server();
-		server.openDoorsForBusiness();
+		Server libraryServer = new Server();
+		libraryServer.openDoorsForBusiness();
 	}
 }
