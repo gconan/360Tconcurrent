@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -43,19 +44,96 @@ public class Server {
 		
 	private void openDoorsForBusiness() {
 		//create listeners on both TCP and UDP and let the client requests flow
-		
-	}
-	
-//********************************************************NESTED CLASS: TCP MONITOR*********************************************
-	
-	protected class TCPmonitor implements Runnable{
-		
-		protected TCPmonitor(Socket sock){
+		try{
+			
+		}finally{
+			try {
+				TCPSocket.close();
+				UDPSocket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			
 		}
+	}
+	
+	public String process(String request) {
+		String[] requestArgs = request.split(" ");
+		String clientID = requestArgs[0];
+		int bookNum = Integer.parseInt(requestArgs[1]);
+		String action = requestArgs[2];
+		
+		if(action.equalsIgnoreCase("reserve")){
+			if(library.containsKey(bookNum)){
+				if(library.get(bookNum).equalsIgnoreCase("available")){
+					return (clientID+" "+bookNum);
+				}else{
+					return ("fail "+clientID+" "+bookNum);
+				}
+			}else{
+				return ("fail "+clientID+" "+bookNum);
+			}
+		}else if(action.equalsIgnoreCase("return")){
+			if(library.containsKey(bookNum)){
+				if(library.get(bookNum).equalsIgnoreCase("reserved")){
+					return ("free "+clientID+" "+bookNum);
+				}else{
+					return ("fail "+clientID+" "+bookNum);
+				}
+			}else{
+				return ("fail "+clientID+" "+bookNum);
+			}
+		}else{
+			//TODO what to return?
+			
+		}
+		return null;
+	}
+	
+	
+	
+//********************************************************NESTED CLASS: TCP MONITOR*********************************************
+	//runnable classes allow for multiple threads to monitor the socket and service requests
+	
+	
+	protected class TCPrequestServicer implements Runnable{
+		Socket sock;
+		
+		protected TCPrequestServicer(Socket soc){
+			this.sock = soc;
+		}
+		
+		@Override
+		public void run() {	//service client request
+			try {	//TODO check Gargs version
+				Scanner inputStream = new Scanner(sock.getInputStream());
+				PrintWriter outputStream = new PrintWriter(sock.getOutputStream());
+				String request = inputStream.nextLine();
+				String response = Server.this.process(request);
+				outputStream.println(response);
+				outputStream.flush();
+		        outputStream.close();
+		        sock.close();
+		        
+			}catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	protected class TCPmonitor implements Runnable{
+		
+		protected TCPmonitor(){ }	//nothing to init
 
 		@Override
 		public void run() {
+			try {
+				Socket sock; 
+				while((sock= TCPSocket.accept()) !=null){	//assignment inside the while condition so that it reassigns itself
+					pool.submit(new TCPrequestServicer(sock));
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			
 		}
 	}
@@ -64,6 +142,8 @@ public class Server {
 	
 	
 //***************************************************MAIN FUNCTION FOR RUNNING FROM COMMMAND LINE*******************************
+	
+	
 	/**
 	 * starts the server and allows it to run requests
 	 * @param args
@@ -72,5 +152,4 @@ public class Server {
 		Server server = new Server();
 		server.openDoorsForBusiness();
 	}
-
 }
