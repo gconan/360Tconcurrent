@@ -13,20 +13,27 @@ public monitor class PQueue {
 	public int insert(String name, int priority){ 
 		// Inserts the name with its priority in the PQueue. // It returns -1 if the name is already present in the list. // Otherwise, returns the current position in the list where the name was inserted. // This method blocks when the list is full.
 		Node node = new Node(name, priority);
+		int i = 0;
 		if(search(name) == -1){
 			return -1;
 		} 
 		waituntil(size < maxSize);
-		if(size >= maxSize){
-			//wait
-			return 0;
-		} else if(size == 0){
+		if(size == 0){
 			head = node;
 			size++;
 			return 0;
 		} else{
-			
-			return 0;
+			Node next = head;
+			Node prev = head;
+			while(next!=null && next.priority >= priority){
+				prev = next;
+				next = next.next;
+				i++;
+			}
+			prev.next = node;
+			node.next = next;
+			size++;
+			return i;
 		}
 	}
 	public int search(String name){
