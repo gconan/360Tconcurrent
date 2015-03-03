@@ -1,15 +1,21 @@
+import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
 
 public class Client {
 	private String ID;
-	private InetAddress ip;
+	private InetAddress IP;
+	byte[] rbuffer = new byte[1024];
 	
 	public Client(){
 		this.ID = null;
-		this.ip = null;
+		this.IP = null;
 	}
 	
 	
@@ -17,7 +23,7 @@ public class Client {
 		String[] lineOne = line.split(" ");
 		this.ID = 'c' + lineOne[0];
 		try {
-			this.ip = InetAddress.getByName(lineOne[1]);
+			this.IP = InetAddress.getByName(lineOne[1]);
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -46,6 +52,42 @@ public class Client {
 	}
 	
 	public void serverCall(String book, String action, int port, String protocol){
+		String call = ID + " " + book + " " + action;
+		if(protocol.equals("T")){
+			//TCP
+			try {
+				Socket server = new Socket(IP , port);
+				Scanner din = new Scanner(server.getInputStream());
+				PrintStream pout = new 
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} else if(protocol.equals("U")){
+			//UDP
+			DatagramPacket sPacket, rPacket;
+			try {
+				DatagramSocket datasocket = new DatagramSocket();
+				byte[] buffer = new byte[call.length()];
+	        	buffer = call.getBytes();
+				sPacket = new DatagramPacket(buffer, buffer.length, IP, port);
+				datasocket.send(sPacket);            	
+	        	rPacket = new DatagramPacket(rbuffer, rbuffer.length);
+	        	datasocket.receive(rPacket);
+	        	String retstring = new String(rPacket.getData(), 0,
+	        			rPacket.getLength());
+	        	System.out.println(retstring);
+				
+			} catch (SocketException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} else{
+			//welp
+		}
 		
 		
 	}
