@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -55,10 +56,17 @@ public class Client {
 		String call = ID + " " + book + " " + action;
 		if(protocol.equals("T")){
 			//TCP
+			String output;
 			try {
 				Socket server = new Socket(IP , port);
 				Scanner din = new Scanner(server.getInputStream());
-				PrintStream pout = new 
+				PrintStream pout = new PrintStream(server.getOutputStream());
+				pout.println(call);
+				pout.flush();
+				output = din.nextLine();
+				System.out.println(output);
+				din.close();
+				pout.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
