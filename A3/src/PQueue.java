@@ -32,7 +32,7 @@ public monitor class PQueue {
 	public int search(String name){
 		// Returns the position of the name in the list. 
 		// If the name is not found it returns -1;
-		
+		waituntil(this.size<this.maxSize);
 		Node temp = this.head;
 		for(int i=0; i<this.size; i++){
 			if(temp == null){
