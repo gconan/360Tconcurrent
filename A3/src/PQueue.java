@@ -1,5 +1,5 @@
 
-public class PQueue {
+public monitor class PQueue {
 	private int maxSize;
 	private int size;
 	private Node head;
@@ -23,15 +23,35 @@ public class PQueue {
 		}
 	}
 	public int search(String name){
-		// Returns the position of the name in the list. // If the name is not found it returns -1;
+		// Returns the position of the name in the list. 
+		// If the name is not found it returns -1;
 		
 		Node temp = this.head;
-		if()
-		return 0;
+		for(int i=0; i<this.size; i++){
+			if(temp == null){
+				return -1;
+			}
+			else if(temp.name.equals(name)){
+				return i;
+			}else{
+				temp = temp.next;
+			}
+		}
+		return -1;
 	}
 	public String getFirst(){
-		// Returns the name with the highest priority in the list. // If the list is empty, then the method blocks. // The name is deleted from the list.
-		return "";
+		// Returns the name with the highest priority in the list. 
+		// If the list is empty, then the method blocks. 
+		// The name is deleted from the list.
+		waituntil(head != null);
+		String result = head.name;
+		deleteHead();
+		return result;
+	}
+	
+	private void deleteHead() {
+		this.head = this.head.next;
+		this.head.prev = null;
 	}
 	
 	public class Node{
