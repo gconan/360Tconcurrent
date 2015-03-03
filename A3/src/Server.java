@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -12,15 +13,14 @@ public class Server {
 	private ServerSocket TCPSocket;
 	private DatagramSocket UDPSocket;
 	private HashMap<Integer, String> library = new HashMap<Integer, String>();
-	private ExecutorService pool;
+	private ExecutorService humanResources;
 	
 	public Server(){
 		Scanner scan = new Scanner(System.in);	//use "standard input"
 		try{
 			this.configureServer(scan.nextLine());
 		}catch(Exception e){
-			System.out.println(e.getMessage());	//use "standard output"
-			e.printStackTrace();
+			System.err.println("Library server not started: "+e);
 		}finally{
 			scan.close();
 		}
@@ -43,15 +43,25 @@ public class Server {
 	}
 		
 	private void openDoorsForBusiness() {
-		//create listeners on both TCP and UDP and let the client requests flow
+		//create socket monitors on both TCP and UDP and let the client requests flow
 		try{
+			TCPmonitor librarian1 = new TCPmonitor();
+			UDPmonitor librarian2 = new UDPmonitor();
 			
+			humanResources.submit(librarian1);
+			humanResources.submit(librarian2);
+			
+			while(true){
+				//wait until server shutdown. dont want garbage collection to discard these librarians
+				//also dont want to close sockets or the pool until server is done
+			}
 		}finally{
 			try {
 				TCPSocket.close();
 				UDPSocket.close();
+				humanResources.shutdown();
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.err.println("Library server not started: "+e);
 			}
 			
 		}
@@ -59,6 +69,7 @@ public class Server {
 	
 	public String process(String request) {
 		String[] requestArgs = request.split(" ");
+		
 		String clientID = requestArgs[0];
 		int bookNum = Integer.parseInt(requestArgs[1]);
 		String action = requestArgs[2];
@@ -90,6 +101,13 @@ public class Server {
 		return null;
 	}
 	
+
+	public byte[] process(byte[] data) {
+		String request = new String(data);	//stack overflow answer on conversion
+		String returnValue = process(request);
+		return returnValue.getBytes();
+	}
+	
 	
 	
 //********************************************************NESTED CLASS: TCP MONITOR*********************************************
@@ -105,7 +123,7 @@ public class Server {
 		
 		@Override
 		public void run() {	//service client request
-			try {	//TODO check Gargs version
+			try {	//similar to serverThread on Proff github	
 				Scanner inputStream = new Scanner(sock.getInputStream());
 				PrintWriter outputStream = new PrintWriter(sock.getOutputStream());
 				String request = inputStream.nextLine();
@@ -116,7 +134,7 @@ public class Server {
 		        sock.close();
 		        
 			}catch (IOException e) {
-				e.printStackTrace();
+				System.err.println("Library server Shutdown: "+e);
 			}
 		}
 	}
@@ -129,16 +147,47 @@ public class Server {
 			try {
 				Socket sock; 
 				while((sock= TCPSocket.accept()) !=null){	//assignment inside the while condition so that it reassigns itself
-					pool.submit(new TCPrequestServicer(sock));
+					humanResources.submit(new TCPrequestServicer(sock));
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.err.println("Library server Shutdown: "+e);
 			}
 			
 		}
 	}
 	
-	
+//********************************************************NESTED CLASS: UDP MONITOR*********************************************
+	protected class UDPmonitor implements Runnable{
+		
+		private final int length = 1024;
+		DatagramPacket dataPacket, returnPacket;
+		
+		protected UDPmonitor(){ }	//nothing to init
+
+		@Override
+		public void run() {
+			byte[] inBuffer = new byte[length];
+			byte[] outBuffer;
+			
+			while(true){	//used example from page 93 in textbook
+				try {
+					dataPacket = new DatagramPacket(inBuffer, inBuffer.length);
+					UDPSocket.receive(dataPacket);
+					outBuffer = Server.this.process(dataPacket.getData());
+					returnPacket = new DatagramPacket(
+										outBuffer,
+										outBuffer.length,
+										dataPacket.getAddress(),
+										dataPacket.getPort());
+					
+					UDPSocket.send(returnPacket);
+					
+				} catch (IOException e) {
+					System.err.println("Library server shutdown: "+e);
+				}
+			}
+		}
+	}
 	
 	
 //***************************************************MAIN FUNCTION FOR RUNNING FROM COMMMAND LINE*******************************
