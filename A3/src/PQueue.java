@@ -1,6 +1,9 @@
 
 public class PQueue {
-	
+	private int maxSize;
+		private int size;
+		private Node head;
+		
 	public PQueue(int m){
 		
 	}
@@ -12,6 +15,8 @@ public class PQueue {
 	public int search(String name){
 		// Returns the position of the name in the list. // If the name is not found it returns -1;
 		
+		Node temp
+		if(this.head.name.equals(name))
 		return 0;
 	}
 	public String getFirst(){
