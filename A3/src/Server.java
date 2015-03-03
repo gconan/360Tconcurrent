@@ -8,13 +8,21 @@ import java.util.HashMap;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 
-
+/**
+ * hosts a library server to which a client can make UDP or TCP requests to reserve/return books
+ * @author conangammel
+ *
+ */
 public class Server {
 	private ServerSocket TCPSocket;
 	private DatagramSocket UDPSocket;
 	private HashMap<Integer, String> library = new HashMap<Integer, String>();
 	private ExecutorService humanResources;
 	
+	/**
+	 * constructor for the libarary server
+	 * takes in standard input and configures the server with the given information
+	 */
 	public Server(){
 		Scanner scan = new Scanner(System.in);	//use "standard input"
 		try{
@@ -26,11 +34,17 @@ public class Server {
 		}
 	}
 
+	/**
+	 * takes a string that should be in the format "<numberOfBooks> <TCPsocket> <UDPsocket>
+	 * @param configString
+	 * @throws NumberFormatException
+	 * @throws IOException
+	 */
 	private void configureServer(String configString) throws NumberFormatException, IOException {
 		
 		String[] configArgs = configString.split(" ");
 		
-		//initialize our library
+		//stock our library with books!
 			//trim in case of extra white space added by sloppy user
 		for(int i=0; i<Integer.parseInt(configArgs[0].trim()); i++){
 			library.put(i, "available");
@@ -41,12 +55,16 @@ public class Server {
 		
 		
 	}
-		
+	
+	/**
+	 * creates two "librarians"(socket listeners) that wait for client commands
+	 * monitors the sockets until client is done
+	 */
 	private void openDoorsForBusiness() {
 		//create socket monitors on both TCP and UDP and let the client requests flow
 		try{
-			TCPmonitor librarian1 = new TCPmonitor();
-			UDPmonitor librarian2 = new UDPmonitor();
+			TCP_librarian librarian1 = new TCP_librarian();
+			UDP_librarian librarian2 = new UDP_librarian();
 			
 			humanResources.submit(librarian1);
 			humanResources.submit(librarian2);
@@ -67,6 +85,11 @@ public class Server {
 		}
 	}
 	
+	/**
+	 * string parsing for client commands
+	 * @param request
+	 * @return
+	 */
 	public String process(String request) {
 		String[] requestArgs = request.split(" ");
 		
@@ -101,7 +124,12 @@ public class Server {
 		return null;
 	}
 	
-
+	/**
+	 * converts a byte to a string and sends it off for parsing
+	 * @see String process(String s)
+	 * @param data
+	 * @return
+	 */
 	public byte[] process(byte[] data) {
 		String request = new String(data);	//stack overflow answer on conversion
 		String returnValue = process(request);
@@ -113,17 +141,21 @@ public class Server {
 //********************************************************NESTED CLASS: TCP MONITOR*********************************************
 	//runnable classes allow for multiple threads to monitor the socket and service requests
 	
-	
-	protected class TCPrequestServicer implements Runnable{
+	/**
+	 * takes a request from the TCP_libarian and processes it
+	 * @author conangammel
+	 *
+	 */
+	protected class TCP_librarian_service implements Runnable{
 		Socket sock;
 		
-		protected TCPrequestServicer(Socket soc){
+		protected TCP_librarian_service(Socket soc){
 			this.sock = soc;
 		}
 		
 		@Override
 		public void run() {	//service client request
-			try {	//similar to serverThread on Proff github	
+			try {	//similar to serverThread on Professor Garg's github	
 				Scanner inputStream = new Scanner(sock.getInputStream());
 				PrintWriter outputStream = new PrintWriter(sock.getOutputStream());
 				String request = inputStream.nextLine();
@@ -131,6 +163,7 @@ public class Server {
 				outputStream.println(response);
 				outputStream.flush();
 		        outputStream.close();
+		        inputStream.close();
 		        sock.close();
 		        
 			}catch (IOException e) {
@@ -138,16 +171,21 @@ public class Server {
 			}
 		}
 	}
-	protected class TCPmonitor implements Runnable{
+	
+	/**
+	 * Waits for a TCP request then sends it off for processing to TCP_librarian_service 
+	 * so it can continue to wait for new requests
+	 */
+	protected class TCP_librarian implements Runnable{
 		
-		protected TCPmonitor(){ }	//nothing to init
+		protected TCP_librarian(){ }	//nothing to init
 
 		@Override
 		public void run() {
 			try {
 				Socket sock; 
 				while((sock= TCPSocket.accept()) !=null){	//assignment inside the while condition so that it reassigns itself
-					humanResources.submit(new TCPrequestServicer(sock));
+					humanResources.submit(new TCP_librarian_service(sock));
 				}
 			} catch (IOException e) {
 				System.err.println("Library server Shutdown: "+e);
@@ -157,12 +195,17 @@ public class Server {
 	}
 	
 //********************************************************NESTED CLASS: UDP MONITOR*********************************************
-	protected class UDPmonitor implements Runnable{
+	/**
+	 * listens for UDP requests and processes them
+	 * @author conangammel
+	 *
+	 */
+	protected class UDP_librarian implements Runnable{
 		
 		private final int length = 1024;
 		DatagramPacket dataPacket, returnPacket;
 		
-		protected UDPmonitor(){ }	//nothing to init
+		protected UDP_librarian(){ }	//nothing to init
 
 		@Override
 		public void run() {
@@ -198,7 +241,7 @@ public class Server {
 	 * @param args
 	 */
 	public static void main(String[] args){
-		Server server = new Server();
-		server.openDoorsForBusiness();
+		Server libraryServer = new Server();
+		libraryServer.openDoorsForBusiness();
 	}
 }
