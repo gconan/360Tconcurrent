@@ -1,13 +1,22 @@
 
 public class PQueue {
+	private int maxSize;
+	private int size;
+	private Node head;
 	
 	public PQueue(int m){
-		
+		this.maxSize = m;
+		this.size = 0;
+		this.head = null;
 	}
 
 	public int insert(String name, int priority){ 
 		// Inserts the name with its priority in the PQueue. // It returns -1 if the name is already present in the list. // Otherwise, returns the current position in the list where the name was inserted. // This method blocks when the list is full.
-		return 0;
+		if(search(name) == -1){
+			return -1;
+		} else{
+			return 0;
+		}
 	}
 	public int search(String name){
 		// Returns the position of the name in the list. // If the name is not found it returns -1;
