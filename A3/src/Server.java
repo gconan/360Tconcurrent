@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * hosts a library server to which a client can make UDP or TCP requests to reserve/return books
@@ -23,14 +24,12 @@ public class Server {
 	 * constructor for the libarary server
 	 * takes in standard input and configures the server with the given information
 	 */
-	public Server(){
-		Scanner scan = new Scanner(System.in);	//use "standard input"
+	public Server(String[] args){
+		humanResources = Executors.newCachedThreadPool();
 		try{
-			this.configureServer(scan.nextLine());
+			this.configureServer(args);
 		}catch(Exception e){
 			System.err.println("Library server not started: "+e);
-		}finally{
-			scan.close();
 		}
 	}
 
@@ -40,19 +39,26 @@ public class Server {
 	 * @throws NumberFormatException
 	 * @throws IOException
 	 */
-	private void configureServer(String configString) throws NumberFormatException, IOException {
-		
-		String[] configArgs = configString.split(" ");
-		
+	private void configureServer(String[] configArgs) throws NumberFormatException, IOException {
+		System.out.println("arg1: "+configArgs[0]+", arg2: "+configArgs[1]+", arg3: "+configArgs[2]);//TODO remove
 		//stock our library with books!
 			//trim in case of extra white space added by sloppy user
 		for(int i=0; i<Integer.parseInt(configArgs[0].trim()); i++){
 			library.put(i, "available");
+			System.out.println("created book number "+i);//TODO remove
 		}
-		
-		TCPSocket = new ServerSocket(Integer.parseInt(configArgs[1].trim()));
-		UDPSocket = new DatagramSocket(Integer.parseInt(configArgs[2].trim()));
-		
+		int tcp = Integer.parseInt(configArgs[1].trim());
+		int udp = Integer.parseInt(configArgs[2].trim());
+		try{
+			TCPSocket = new ServerSocket(tcp);
+			System.out.println("TCP socket created");//TODO remove
+			//TCPSocket.bind(endpoint);
+			UDPSocket = new DatagramSocket(udp);
+			System.out.println("UDP socket created");//TODO remove
+		}catch(Exception e){
+			System.err.println("TCP or UDP error "+e);
+		}
+		System.out.println("sockets created");//TODO remove
 		
 	}
 	
@@ -62,7 +68,7 @@ public class Server {
 	 */
 	private void openDoorsForBusiness() {
 		//create socket monitors on both TCP and UDP and let the client requests flow
-		try{
+//		try{
 			TCP_librarian librarian1 = new TCP_librarian();
 			UDP_librarian librarian2 = new UDP_librarian();
 			
@@ -73,16 +79,16 @@ public class Server {
 				//wait until server shutdown. dont want garbage collection to discard these librarians
 				//also dont want to close sockets or the pool until server is done
 			}
-		}finally{
-			try {
-				TCPSocket.close();
-				UDPSocket.close();
-				humanResources.shutdown();
-			} catch (IOException e) {
-				System.err.println("Library server not started: "+e);
-			}
+//		}finally{
+//			try {
+//				TCPSocket.close();
+//				UDPSocket.close();
+//				humanResources.shutdown();
+//			} catch (IOException e) {
+//				System.err.println("Library server not started: "+e);
+//			}
 			
-		}
+//		}
 	}
 	
 	/**
@@ -164,7 +170,7 @@ public class Server {
 				outputStream.flush();
 		        outputStream.close();
 		        inputStream.close();
-		        sock.close();
+		    //    sock.close();
 		        
 			}catch (IOException e) {
 				System.err.println("Library server Shutdown: "+e);
@@ -182,9 +188,11 @@ public class Server {
 
 		@Override
 		public void run() {
+			System.out.println("starting TCP...");//TODO remove
 			try {
 				Socket sock; 
 				while((sock= TCPSocket.accept()) !=null){	//assignment inside the while condition so that it reassigns itself
+					System.out.println("TCP accepted");//TODO remove
 					humanResources.submit(new TCP_librarian_service(sock));
 				}
 			} catch (IOException e) {
@@ -209,6 +217,7 @@ public class Server {
 
 		@Override
 		public void run() {
+			System.out.println("Starting UDP...");//TODO remove
 			byte[] inBuffer = new byte[length];
 			byte[] outBuffer;
 			
@@ -241,7 +250,9 @@ public class Server {
 	 * @param args
 	 */
 	public static void main(String[] args){
-		Server libraryServer = new Server();
+		System.out.println("Start Main, args length: "+args.length);//TODO remove
+		Server libraryServer = new Server(args);
+		System.out.println("new server created");//TODO remove
 		libraryServer.openDoorsForBusiness();
 	}
 }
