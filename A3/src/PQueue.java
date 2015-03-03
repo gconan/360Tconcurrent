@@ -66,6 +66,11 @@ public monitor class PQueue {
 		protected int priority;
 		protected Node next;
 		protected Node prev;
+		
+		public Node(String n, int pri){
+			this.name = n;
+			this.priority = pri;
+		}
 	}
 	
 }
