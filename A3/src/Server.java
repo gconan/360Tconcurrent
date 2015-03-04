@@ -102,6 +102,7 @@ public class Server {
 		if(action.equalsIgnoreCase("reserve")){
 			if(library.containsKey(bookNum)){
 				if(library.get(bookNum).equalsIgnoreCase("available")){
+					library.put(bookNum, "reserved");
 					return (clientID+" b"+bookNum);
 				}else{
 					return ("fail "+clientID+" b"+bookNum);
@@ -112,6 +113,7 @@ public class Server {
 		}else if(action.equalsIgnoreCase("return")){
 			if(library.containsKey(bookNum)){
 				if(library.get(bookNum).equalsIgnoreCase("reserved")){
+					library.put(bookNum, "available");
 					return ("free "+clientID+" b"+bookNum);
 				}else{
 					return ("fail "+clientID+" b"+bookNum);
