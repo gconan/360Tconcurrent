@@ -1,3 +1,4 @@
 2 127.0.0.1
-sleep 3500
-b2 reserve 10000 T
+b7 reserve 10000 T
+b8 reserve 9000 U
+b9 reserve 10000 T
