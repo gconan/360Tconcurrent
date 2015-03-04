@@ -82,6 +82,7 @@ public class Client {
 	        	String retstring = new String(rPacket.getData(), 0,
 	        			rPacket.getLength());
 	        	System.out.println(retstring);
+	        	datasocket.close();
 				
 			} catch (SocketException e) {
 				e.printStackTrace();

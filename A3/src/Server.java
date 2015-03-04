@@ -209,7 +209,7 @@ public class Server {
 		@Override
 		public void run() {
 			byte[] inBuffer = new byte[length];
-			byte[] outBuffer;
+			byte[] outBuffer = new byte[length];
 			
 			while(true){	//used example from page 93 in textbook
 				try {
