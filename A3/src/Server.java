@@ -42,7 +42,7 @@ public class Server {
 	private void configureServer(String[] configArgs) throws NumberFormatException, IOException {
 		//stock our library with books!
 			//trim in case of extra white space added by sloppy user
-		for(int i=0; i<Integer.parseInt(configArgs[0].trim()); i++){
+		for(int i=0; i<=Integer.parseInt(configArgs[0].trim()); i++){
 			library.put(i, "available");
 		}
 		int tcp = Integer.parseInt(configArgs[2].trim());
@@ -92,8 +92,12 @@ public class Server {
 	 * @param request
 	 * @return
 	 */
-	public String process(String request) {
+	public synchronized String process(String request) {
 		String[] requestArgs = request.split(" ");
+		if(requestArgs.length<3){
+			System.out.println("UDP BULLSHIT");
+			return("fail, UDP error");
+		}
 		
 		String clientID = requestArgs[0].trim();
 		int bookNum = Integer.parseInt(requestArgs[1].trim().substring(1));
@@ -101,8 +105,8 @@ public class Server {
 		
 		if(action.equalsIgnoreCase("reserve")){
 			if(library.containsKey(bookNum)){
-				if(library.get(bookNum).equalsIgnoreCase("available")){
-					library.put(bookNum, "reserved");
+				if(library.get(bookNum).equalsIgnoreCase("available") || library.get(bookNum).equalsIgnoreCase(clientID)){
+					library.put(bookNum, clientID);
 					return (clientID+" b"+bookNum);
 				}else{
 					return ("fail "+clientID+" b"+bookNum);
@@ -112,7 +116,7 @@ public class Server {
 			}
 		}else if(action.equalsIgnoreCase("return")){
 			if(library.containsKey(bookNum)){
-				if(library.get(bookNum).equalsIgnoreCase("reserved")){
+				if(library.get(bookNum).equalsIgnoreCase(clientID)){
 					library.put(bookNum, "available");
 					return ("free "+clientID+" b"+bookNum);
 				}else{
