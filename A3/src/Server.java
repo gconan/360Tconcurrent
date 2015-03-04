@@ -66,7 +66,6 @@ public class Server {
 	 */
 	private void openDoorsForBusiness() {
 		//create socket monitors on both TCP and UDP and let the client requests flow
-//		try{
 			TCP_librarian librarian1 = new TCP_librarian();
 			UDP_librarian librarian2 = new UDP_librarian();
 			
@@ -77,16 +76,6 @@ public class Server {
 				//wait until server shutdown. dont want garbage collection to discard these librarians
 				//also dont want to close sockets or the pool until server is done
 			}
-//		}finally{
-//			try {
-//				TCPSocket.close();
-//				UDPSocket.close();
-//				humanResources.shutdown();
-//			} catch (IOException e) {
-//				System.err.println("Library server not started: "+e);
-//			}
-			
-//		}
 	}
 	
 	/**
@@ -96,8 +85,7 @@ public class Server {
 	 */
 	public synchronized String process(String request) {
 		String[] requestArgs = request.split(" ");
-		if(requestArgs.length<3){
-			System.out.println("UDP BULLSHIT");
+		if(requestArgs.length<3){//if all of the packets didnt make it
 			return("fail, UDP error");
 		}
 		
