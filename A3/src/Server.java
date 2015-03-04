@@ -4,7 +4,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 public class Server {
 	private ServerSocket TCPSocket;
 	private DatagramSocket UDPSocket;
-	private HashMap<Integer, String> library = new HashMap<Integer, String>();
+	private ArrayList<String> library;
 	private ExecutorService humanResources;
 	
 	/**
@@ -44,8 +44,9 @@ public class Server {
 			//trim in case of extra white space added by sloppy user
 		
 		String[] configArgs = configString.split(" ");
-		for(int i=0; i<=Integer.parseInt(configArgs[0].trim()); i++){
-			library.put(i, "available");
+		library = new ArrayList<String>();
+		for(int i=0; i<Integer.parseInt(configArgs[0].trim()); i++){
+			library.add("available");
 		}
 		int tcp = Integer.parseInt(configArgs[2].trim());
 		int udp = Integer.parseInt(configArgs[1].trim());
@@ -90,30 +91,30 @@ public class Server {
 		}
 		
 		String clientID = requestArgs[0].trim();
-		int bookNum = Integer.parseInt(requestArgs[1].trim().substring(1));
+		int bookNum = Integer.parseInt(requestArgs[1].trim().substring(1))-1;
 		String action = requestArgs[2].trim();
 		
 		if(action.equalsIgnoreCase("reserve")){
-			if(library.containsKey(bookNum)){
+			if(bookNum<library.size()){
 				if(library.get(bookNum).equalsIgnoreCase("available") || library.get(bookNum).equalsIgnoreCase(clientID)){
-					library.put(bookNum, clientID);
-					return (clientID+" b"+bookNum);
+					library.set(bookNum, clientID);
+					return (clientID+" b"+(bookNum+1));
 				}else{
-					return ("fail "+clientID+" b"+bookNum);
+					return ("fail "+clientID+" b"+(bookNum+1));
 				}
 			}else{
-				return ("fail "+clientID+" b"+bookNum);
+				return ("fail "+clientID+" b"+bookNum+1);
 			}
 		}else if(action.equalsIgnoreCase("return")){
-			if(library.containsKey(bookNum)){
+			if(bookNum<library.size()){
 				if(library.get(bookNum).equalsIgnoreCase(clientID)){
-					library.put(bookNum, "available");
-					return ("free "+clientID+" b"+bookNum);
+					library.set(bookNum,"available");
+					return ("free "+clientID+" b"+(bookNum+1));
 				}else{
-					return ("fail "+clientID+" b"+bookNum);
+					return ("fail "+clientID+" b"+(bookNum+1));
 				}
 			}else{
-				return ("fail "+clientID+" b"+bookNum);
+				return ("fail "+clientID+" b"+(bookNum+1));
 			}
 		}else{
 			//TODO what to return?
