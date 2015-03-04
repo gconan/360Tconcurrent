@@ -24,10 +24,10 @@ public class Server {
 	 * constructor for the libarary server
 	 * takes in standard input and configures the server with the given information
 	 */
-	public Server(String[] args){
+	public Server(String string){
 		humanResources = Executors.newCachedThreadPool();
 		try{
-			this.configureServer(args);
+			this.configureServer(string);
 		}catch(Exception e){
 			System.err.println("Library server not started: "+e);
 		}
@@ -39,9 +39,11 @@ public class Server {
 	 * @throws NumberFormatException
 	 * @throws IOException
 	 */
-	private void configureServer(String[] configArgs) throws NumberFormatException, IOException {
+	private void configureServer(String configString) throws NumberFormatException, IOException {
 		//stock our library with books!
 			//trim in case of extra white space added by sloppy user
+		
+		String[] configArgs = configString.split(" ");
 		for(int i=0; i<=Integer.parseInt(configArgs[0].trim()); i++){
 			library.put(i, "available");
 		}
@@ -249,7 +251,8 @@ public class Server {
 	 * @param args
 	 */
 	public static void main(String[] args){
-		Server libraryServer = new Server(args);
+		Scanner scan = new Scanner(System.in);
+		Server libraryServer = new Server(scan.nextLine());
 		libraryServer.openDoorsForBusiness();
 	}
 }

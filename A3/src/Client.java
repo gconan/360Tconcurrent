@@ -97,8 +97,6 @@ public class Client {
 	
 	public static void main(String[] args) {
 		Client c = new Client();
-		System.out.println(args.length);
-		for(String s: args) System.out.println(s);//TODO remove
 		Scanner sc = new Scanner(System.in);
 		c.inputFirstLine(sc.nextLine());
 		while(sc.hasNextLine()){
