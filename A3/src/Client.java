@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -26,7 +27,6 @@ public class Client {
 		try {
 			this.IP = InetAddress.getByName(lineOne[1]);
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -41,10 +41,8 @@ public class Client {
 			try {
 				Thread.sleep(Integer.parseInt(words[1]));
 			} catch (NumberFormatException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			return;
@@ -60,15 +58,13 @@ public class Client {
 			try {
 				Socket server = new Socket(IP , port);
 				Scanner din = new Scanner(server.getInputStream());
-				PrintStream pout = new PrintStream(server.getOutputStream());
+				PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 				pout.println(call);
-				pout.flush();
 				output = din.nextLine();
 				System.out.println(output);
 				din.close();
 				pout.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		} else if(protocol.equals("U")){
@@ -87,10 +83,8 @@ public class Client {
 	        	System.out.println(retstring);
 				
 			} catch (SocketException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		} else{

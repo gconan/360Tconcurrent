@@ -40,25 +40,21 @@ public class Server {
 	 * @throws IOException
 	 */
 	private void configureServer(String[] configArgs) throws NumberFormatException, IOException {
-		System.out.println("arg1: "+configArgs[0]+", arg2: "+configArgs[1]+", arg3: "+configArgs[2]);//TODO remove
 		//stock our library with books!
 			//trim in case of extra white space added by sloppy user
 		for(int i=0; i<Integer.parseInt(configArgs[0].trim()); i++){
 			library.put(i, "available");
-			System.out.println("created book number "+i);//TODO remove
 		}
-		int tcp = Integer.parseInt(configArgs[1].trim());
-		int udp = Integer.parseInt(configArgs[2].trim());
+		int tcp = Integer.parseInt(configArgs[2].trim());
+		int udp = Integer.parseInt(configArgs[1].trim());
 		try{
 			TCPSocket = new ServerSocket(tcp);
-			System.out.println("TCP socket created");//TODO remove
-			//TCPSocket.bind(endpoint);
+			
 			UDPSocket = new DatagramSocket(udp);
-			System.out.println("UDP socket created");//TODO remove
+			
 		}catch(Exception e){
 			System.err.println("TCP or UDP error "+e);
 		}
-		System.out.println("sockets created");//TODO remove
 		
 	}
 	
@@ -99,29 +95,29 @@ public class Server {
 	public String process(String request) {
 		String[] requestArgs = request.split(" ");
 		
-		String clientID = requestArgs[0];
-		int bookNum = Integer.parseInt(requestArgs[1]);
-		String action = requestArgs[2];
+		String clientID = requestArgs[0].trim();
+		int bookNum = Integer.parseInt(requestArgs[1].trim().substring(1));
+		String action = requestArgs[2].trim();
 		
 		if(action.equalsIgnoreCase("reserve")){
 			if(library.containsKey(bookNum)){
 				if(library.get(bookNum).equalsIgnoreCase("available")){
-					return (clientID+" "+bookNum);
+					return (clientID+" b"+bookNum);
 				}else{
-					return ("fail "+clientID+" "+bookNum);
+					return ("fail "+clientID+" b"+bookNum);
 				}
 			}else{
-				return ("fail "+clientID+" "+bookNum);
+				return ("fail "+clientID+" b"+bookNum);
 			}
 		}else if(action.equalsIgnoreCase("return")){
 			if(library.containsKey(bookNum)){
 				if(library.get(bookNum).equalsIgnoreCase("reserved")){
-					return ("free "+clientID+" "+bookNum);
+					return ("free "+clientID+" b"+bookNum);
 				}else{
-					return ("fail "+clientID+" "+bookNum);
+					return ("fail "+clientID+" b"+bookNum);
 				}
 			}else{
-				return ("fail "+clientID+" "+bookNum);
+				return ("fail "+clientID+" b"+bookNum);
 			}
 		}else{
 			//TODO what to return?
@@ -170,7 +166,7 @@ public class Server {
 				outputStream.flush();
 		        outputStream.close();
 		        inputStream.close();
-		    //    sock.close();
+		        sock.close();
 		        
 			}catch (IOException e) {
 				System.err.println("Library server Shutdown: "+e);
@@ -188,11 +184,9 @@ public class Server {
 
 		@Override
 		public void run() {
-			System.out.println("starting TCP...");//TODO remove
 			try {
 				Socket sock; 
 				while((sock= TCPSocket.accept()) !=null){	//assignment inside the while condition so that it reassigns itself
-					System.out.println("TCP accepted");//TODO remove
 					humanResources.submit(new TCP_librarian_service(sock));
 				}
 			} catch (IOException e) {
@@ -217,7 +211,6 @@ public class Server {
 
 		@Override
 		public void run() {
-			System.out.println("Starting UDP...");//TODO remove
 			byte[] inBuffer = new byte[length];
 			byte[] outBuffer;
 			
@@ -250,9 +243,7 @@ public class Server {
 	 * @param args
 	 */
 	public static void main(String[] args){
-		System.out.println("Start Main, args length: "+args.length);//TODO remove
 		Server libraryServer = new Server(args);
-		System.out.println("new server created");//TODO remove
 		libraryServer.openDoorsForBusiness();
 	}
 }
