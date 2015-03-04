@@ -35,8 +35,6 @@ public class Client {
 		String[] words = line.split(" ");
 		String bookNumber = words[0];
 		String action = words[1];
-		int port = Integer.parseInt(words[2]);
-		String protocol = words[3];
 		if(words[0].equals("sleep")){
 			try {
 				Thread.sleep(Integer.parseInt(words[1]));
@@ -47,6 +45,9 @@ public class Client {
 			}
 			return;
 		}
+		int port = Integer.parseInt(words[2]);
+		String protocol = words[3];
+		
 		serverCall(bookNumber, action, port, protocol);
 	}
 	
@@ -98,7 +99,7 @@ public class Client {
 		Client c = new Client();
 		Scanner sc = new Scanner(System.in);
 		c.inputFirstLine(sc.nextLine());
-		while(true){
+		while(sc.hasNextLine()){
 			c.inputLines(sc.nextLine());
 		}
 	}
