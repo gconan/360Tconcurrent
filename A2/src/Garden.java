@@ -61,7 +61,7 @@ public class Garden {
 	public void startDigging(){
 		lock.lock();
 		try{
-			while(dugHoles >= max || shovelMutex.availablePermits()!=1){
+			while(dugHoles >= max || shovelMutex.availablePermits() != 1){
 				try {
 					digAvail.await();
 				} catch (InterruptedException e) {
@@ -115,9 +115,9 @@ public class Garden {
 		try{
 			totalSeeds.incrementAndGet();
 			seededHoles++;
-			seedAvail.signal();
 			fillAvail.signal();
 			digAvail.signal();
+			seedAvail.signal();
 		}
 		finally{
 			lock.unlock();
@@ -127,7 +127,7 @@ public class Garden {
 	public void startFilling(){
 		lock.lock();
 		try{
-			while(seededHoles <= 0 || shovelMutex.availablePermits()!=1){
+			while(seededHoles <= 0 || shovelMutex.availablePermits() != 1){
 				try {
 					fillAvail.await();
 				} catch (InterruptedException e) {
@@ -152,9 +152,9 @@ public class Garden {
 			seededHoles--;
 			dugHoles--;
 			shovelMutex.release();
+			digAvail.signal();
 			seedAvail.signal();
 			fillAvail.signal();
-			digAvail.signal();
 		}
 		finally{
 			lock.unlock();
