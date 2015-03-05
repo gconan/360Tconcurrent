@@ -16,18 +16,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class FairReadWriteLock {
 	
+	private ReadWriteLockLogger logger;
 	private AtomicBoolean lock;
 	private int numReaders;
 	
 	public FairReadWriteLock(){
 		lock = new AtomicBoolean(false);
 		numReaders = 0;
+		logger = new ReadWriteLockLogger();
 		
 	}
 	
 //*************************READER************************************
 	public synchronized void beginRead(){
-		
+			logger.logTryToRead();
 			while(numReaders<=0 && lock.get()){
 				try {
 					wait();
@@ -41,10 +43,12 @@ public class FairReadWriteLock {
 				lock.set(true);
 			}
 			notifyAll();
+			logger.logBeginRead();
 			//READ
 	}
 	
 	public synchronized void endRead(){
+			logger.logEndRead();
 			numReaders--;
 			if(numReaders==0){
 				lock.set(false);
@@ -55,6 +59,7 @@ public class FairReadWriteLock {
 	
 //***************************WRITER*********************************************
 	public synchronized void beginWrite(){
+		logger.logTryToWrite();
 		while(numReaders>0 || lock.get()){
 			try {
 				wait();
@@ -63,11 +68,13 @@ public class FairReadWriteLock {
 			}
 		}
 			lock.set(true);
+			logger.logBeginWrite();
 			//WRITE
 		
 	}
 
 	public synchronized void endWrite(){
+		logger.logEndWrite();
 		lock.set(false);
 		notifyAll();
 	}
