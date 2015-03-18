@@ -1,9 +1,9 @@
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
@@ -16,20 +16,65 @@ import java.util.concurrent.Executors;
  */
 public class Server {
 	private ServerSocket TCPSocket;
-	private DatagramSocket UDPSocket;
+	private ArrayList<ReplicaServers> replicas;
+	private int ID;
 	private ArrayList<String> library;
 	private ExecutorService humanResources;
+	private int numberOfServices;
+	private int sleepDuration;
 	
 	/**
 	 * constructor for the libarary server
 	 * takes in standard input and configures the server with the given information
 	 */
-	public Server(String string){
+	public Server(Scanner scan){
 		humanResources = Executors.newCachedThreadPool();
 		try{
-			this.configureServer(string);
+			String line = scan.nextLine();
+			int id = 1;
+			this.configureServer(line);
+			while(scan.hasNextLine()){
+				line = scan.nextLine();
+				if(line.charAt(0)!='c' && line.charAt(0)!='C'){
+					this.addNewReplica(line, id++);
+				}else{
+					this.setCrash(line);
+				}
+			}
 		}catch(Exception e){
 			System.err.println("Library server not started: "+e);
+		}
+	}
+	
+	private void addNewReplica(String line, int id){
+		String[] creds = line.split(":");
+		if(creds.length!=2){
+			System.out.println("Bad Input, cant add new replica server");
+			System.exit(0);//TODO ok?
+		}else{
+			InetAddress ip = null;
+			int port = 0;
+			try{
+				ip = InetAddress.getByName(creds[0]);
+			}catch(UnknownHostException e){
+				System.out.println("Could not determine the IP address given. "+e.getMessage());
+			}
+			try{
+				port = Integer.parseInt(creds[1].trim());
+			}catch(NumberFormatException e){
+				System.out.println("Could not determine the port number given. " + e.getMessage());
+			}
+			replicas.add(new ReplicaServers(id,ip, port));
+		}
+	}
+	
+	private void setCrash(String line){
+		String[] crash = line.split(" ");
+		try{
+			this.numberOfServices = Integer.parseInt(crash[1]);
+			this.sleepDuration = Integer.parseInt(crash[2]);
+		}catch(NumberFormatException e){
+			System.out.println("Could not determine the crash command. "+e.getMessage());
 		}
 	}
 
@@ -64,10 +109,8 @@ public class Server {
 	private void openDoorsForBusiness() {
 		//create socket monitors on both TCP and UDP and let the client requests flow
 			TCP_librarian librarian1 = new TCP_librarian();
-			UDP_librarian librarian2 = new UDP_librarian();
 			
 			humanResources.submit(librarian1);
-			humanResources.submit(librarian2);
 			
 			while(true){
 				//wait until server shutdown. dont want garbage collection to discard these librarians
@@ -188,43 +231,6 @@ public class Server {
 		}
 	}
 	
-//********************************************************NESTED CLASS: UDP MONITOR*********************************************
-	/**
-	 * listens for UDP requests and processes them
-	 * @author conangammel
-	 *
-	 */
-	protected class UDP_librarian implements Runnable{
-		
-		private final int length = 1024;
-		DatagramPacket dataPacket, returnPacket;
-		
-		protected UDP_librarian(){ }	//nothing to init
-
-		@Override
-		public void run() {
-			byte[] inBuffer = new byte[length];
-			byte[] outBuffer = new byte[length];
-			
-			while(true){	//used example from page 93 in textbook
-				try {
-					dataPacket = new DatagramPacket(inBuffer, inBuffer.length);
-					UDPSocket.receive(dataPacket);
-					outBuffer = Server.this.process(dataPacket.getData());
-					returnPacket = new DatagramPacket(
-										outBuffer,
-										outBuffer.length,
-										dataPacket.getAddress(),
-										dataPacket.getPort());
-					
-					UDPSocket.send(returnPacket);
-				} catch (IOException e) {
-					System.err.println("Library server shutdown: "+e);
-				}
-			}
-		}
-	}
-	
 	
 //***************************************************MAIN FUNCTION FOR RUNNING FROM COMMMAND LINE*******************************
 	
@@ -235,7 +241,7 @@ public class Server {
 	 */
 	public static void main(String[] args){
 		Scanner scan = new Scanner(System.in);
-		Server libraryServer = new Server(scan.nextLine());
+		Server libraryServer = new Server(scan);
 		libraryServer.openDoorsForBusiness();
 	}
 }
