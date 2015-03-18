@@ -51,4 +51,9 @@ public class ReplicaServers {
 		this.requested = false;
 	}
 	
+	@Override
+	public String toString(){
+		return ("Server "+id+" is on IP: "+ip.toString()+" and port number "+port);
+	}
+	
 }

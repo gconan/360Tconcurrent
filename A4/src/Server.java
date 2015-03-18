@@ -20,6 +20,7 @@ public class Server {
 	private int ID;
 	private ArrayList<String> library;
 	private ExecutorService humanResources;
+	private int numOfServers;
 	private int numberOfServices;
 	private int sleepDuration;
 	
@@ -29,17 +30,19 @@ public class Server {
 	 */
 	public Server(Scanner scan){
 		humanResources = Executors.newCachedThreadPool();
+		this.replicas = new ArrayList<ReplicaServers>();
 		try{
 			String line = scan.nextLine();
-			int id = 1;
 			this.configureServer(line);//TODO use a for loop for number of servers
-			while(scan.hasNextLine()){
+			for(int i=1; i<=this.numOfServers; i++){
 				line = scan.nextLine();
-				if(line.charAt(0)!='c' && line.charAt(0)!='C'){
-					this.addNewReplica(line, id++);
-				}else{
+				this.addNewReplica(line, i);
+			}
+			
+			if(scan.hasNextLine()){
 					this.setCrash(line);
-				}
+			}else{
+					
 			}
 		}catch(Exception e){
 			System.err.println("Library server not started: "+e);
@@ -89,17 +92,24 @@ public class Server {
 		//stock our library with books!
 			//trim in case of extra white space added by sloppy user
 		
-		String[] configArgs = configString.split(" ");
+		String[] ints = configString.split(" ");
+		this.ID = Integer.parseInt(ints[0]);
+		this.numOfServers =  Integer.parseInt(ints[1]);
 		library = new ArrayList<String>();
-		for(int i=0; i<Integer.parseInt(configArgs[1].trim()); i++){//changed to 1 for A4 requirement
+		for(int i=0; i<Integer.parseInt(ints[2].trim()); i++){//changed to 1 for A4 requirement
 			library.add("available");
 		}
-		int tcp = Integer.parseInt(configArgs[2].trim());
-		try{
-			TCPSocket = new ServerSocket(tcp);
-		}catch(Exception e){
-			System.err.println("TCP error "+e);
-		}
+//		String[] configArgs = configString.split(" ");
+//		library = new ArrayList<String>();
+//		for(int i=0; i<Integer.parseInt(configArgs[1].trim()); i++){//changed to 1 for A4 requirement
+//			library.add("available");
+//		}
+//		int tcp = Integer.parseInt(configArgs[2].trim());
+//		try{
+//			TCPSocket = new ServerSocket(tcp);
+//		}catch(Exception e){
+//			System.err.println("TCP error "+e);
+//		}
 		
 	}
 	
@@ -178,6 +188,17 @@ public class Server {
 		String request = new String(data);	//stack overflow answer on conversion
 		String returnValue = process(request);
 		return returnValue.getBytes();
+	}
+	
+	/**
+	 * Injectrion method
+	 */
+	protected String printReplicaSet(){
+		String result = "";
+		for(ReplicaServers s: this.replicas){
+			result+=s.toString()+" ";
+		}
+		return result;
 	}
 	
 	
