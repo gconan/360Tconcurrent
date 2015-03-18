@@ -32,7 +32,7 @@ public class Server {
 		try{
 			String line = scan.nextLine();
 			int id = 1;
-			this.configureServer(line);
+			this.configureServer(line);//TODO use a for loop for number of servers
 			while(scan.hasNextLine()){
 				line = scan.nextLine();
 				if(line.charAt(0)!='c' && line.charAt(0)!='C'){
@@ -143,28 +143,22 @@ public class Server {
 			if(bookNum<library.size()){
 				if(library.get(bookNum).equalsIgnoreCase("available") || library.get(bookNum).equalsIgnoreCase(clientID)){
 					library.set(bookNum, clientID);
-					this.numberOfServices--;
 					return (clientID+" b"+(bookNum+1));
 				}else{
-					this.numberOfServices--;
 					return ("fail "+clientID+" b"+(bookNum+1));
 				}
 			}else{
-				this.numberOfServices--;
 				return ("fail "+clientID+" b"+bookNum+1);
 			}
 		}else if(action.equalsIgnoreCase("return")){
 			if(bookNum<library.size()){
 				if(library.get(bookNum).equalsIgnoreCase(clientID)){
 					library.set(bookNum,"available");
-					this.numberOfServices--;
 					return ("free "+clientID+" b"+(bookNum+1));
 				}else{
-					this.numberOfServices--;
 					return ("fail "+clientID+" b"+(bookNum+1));
 				}
 			}else{
-				this.numberOfServices--;
 				return ("fail "+clientID+" b"+(bookNum+1));
 			}
 		}else{
