@@ -64,6 +64,7 @@ public class Server {
 			}catch(NumberFormatException e){
 				System.out.println("Could not determine the port number given. " + e.getMessage());
 			}
+			//TODO what do we do if the ip is local host vs not local host on the IDth add?
 			replicas.add(new ReplicaServers(id,ip, port));
 		}
 	}
@@ -108,7 +109,7 @@ public class Server {
 	 */
 	private void openDoorsForBusiness() {
 		//create socket monitors on both TCP and UDP and let the client requests flow
-			TCP_librarian librarian1 = new TCP_librarian();
+			TCP_librarian librarian1 = new TCP_librarian(this.numberOfServices, this.sleepDuration);
 			
 			humanResources.submit(librarian1);
 			
@@ -118,6 +119,15 @@ public class Server {
 			}
 	}
 	
+	protected void crash(int duration){
+		this.library.clear();
+		try{
+			Thread.sleep(duration);
+		}catch(InterruptedException e){
+			System.out.println("Server ID: "+this.ID+" crash interrupted");
+		}
+	}
+	
 	/**
 	 * string parsing for client commands
 	 * @param request
@@ -125,10 +135,6 @@ public class Server {
 	 */
 	public synchronized String process(String request) {
 		String[] requestArgs = request.split(" ");
-		if(requestArgs.length<3){//if all of the packets didnt make it
-			return("fail, UDP error");
-		}
-		
 		String clientID = requestArgs[0].trim();
 		int bookNum = Integer.parseInt(requestArgs[1].trim().substring(1))-1;
 		String action = requestArgs[2].trim();
@@ -137,22 +143,28 @@ public class Server {
 			if(bookNum<library.size()){
 				if(library.get(bookNum).equalsIgnoreCase("available") || library.get(bookNum).equalsIgnoreCase(clientID)){
 					library.set(bookNum, clientID);
+					this.numberOfServices--;
 					return (clientID+" b"+(bookNum+1));
 				}else{
+					this.numberOfServices--;
 					return ("fail "+clientID+" b"+(bookNum+1));
 				}
 			}else{
+				this.numberOfServices--;
 				return ("fail "+clientID+" b"+bookNum+1);
 			}
 		}else if(action.equalsIgnoreCase("return")){
 			if(bookNum<library.size()){
 				if(library.get(bookNum).equalsIgnoreCase(clientID)){
 					library.set(bookNum,"available");
+					this.numberOfServices--;
 					return ("free "+clientID+" b"+(bookNum+1));
 				}else{
+					this.numberOfServices--;
 					return ("fail "+clientID+" b"+(bookNum+1));
 				}
 			}else{
+				this.numberOfServices--;
 				return ("fail "+clientID+" b"+(bookNum+1));
 			}
 		}else{
@@ -214,15 +226,24 @@ public class Server {
 	 * so it can continue to wait for new requests
 	 */
 	protected class TCP_librarian implements Runnable{
+		private int numOfCommands;
+		private int crashLength;
 		
-		protected TCP_librarian(){ }	//nothing to init
+		protected TCP_librarian(int num, int duration){
+			this.numOfCommands = num;
+			this.crashLength = duration;
+		}
 
 		@Override
 		public void run() {
 			try {
 				Socket sock; 
 				while((sock= TCPSocket.accept()) !=null){	//assignment inside the while condition so that it reassigns itself
+					this.numOfCommands--;
 					humanResources.submit(new TCP_librarian_service(sock));
+					if(this.numOfCommands==0){
+						Server.this.crash(this.crashLength);//TODO not sure if crash is working
+					}
 				}
 			} catch (IOException e) {
 				System.err.println("Library server Shutdown: "+e);
