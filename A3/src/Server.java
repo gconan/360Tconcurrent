@@ -164,7 +164,6 @@ public class Server {
 		        outputStream.close();
 		        inputStream.close();
 		        sock.close();
-		        
 			}catch (IOException e) {
 				System.err.println("Library server Shutdown: "+e);
 			}
@@ -223,7 +222,6 @@ public class Server {
 										dataPacket.getPort());
 					
 					UDPSocket.send(returnPacket);
-					
 				} catch (IOException e) {
 					System.err.println("Library server shutdown: "+e);
 				}
