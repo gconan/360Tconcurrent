@@ -45,18 +45,14 @@ public class Server {
 		
 		String[] configArgs = configString.split(" ");
 		library = new ArrayList<String>();
-		for(int i=0; i<Integer.parseInt(configArgs[0].trim()); i++){
+		for(int i=0; i<Integer.parseInt(configArgs[1].trim()); i++){//changed to 1 for A4 requirement
 			library.add("available");
 		}
 		int tcp = Integer.parseInt(configArgs[2].trim());
-		int udp = Integer.parseInt(configArgs[1].trim());
 		try{
 			TCPSocket = new ServerSocket(tcp);
-			
-			UDPSocket = new DatagramSocket(udp);
-			
 		}catch(Exception e){
-			System.err.println("TCP or UDP error "+e);
+			System.err.println("TCP error "+e);
 		}
 		
 	}
