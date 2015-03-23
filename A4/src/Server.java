@@ -21,8 +21,7 @@ public class Server {
 	private ArrayList<String> library;
 	private ExecutorService humanResources;
 	private int numOfServers;
-	private int numberOfServices;
-	private int sleepDuration;
+	private ArrayList<int[]> crashCommands;
 	
 	/**
 	 * constructor for the libarary server
@@ -31,17 +30,20 @@ public class Server {
 	public Server(Scanner scan){
 		humanResources = Executors.newCachedThreadPool();
 		this.replicas = new ArrayList<ReplicaServers>();
+		this.crashCommands = new ArrayList<int[]>();
 		try{
 			String line = scan.nextLine();
 			this.configureServer(line);//TODO use a for loop for number of servers
 			for(int i=1; i<=this.numOfServers; i++){
 				line = scan.nextLine();
+				if(this.ID ==  i){
+					
+				}
 				this.addNewReplica(line, i);
 			}
 			
 			if(scan.hasNextLine()){
-				line = scan.nextLine();
-				this.setCrash(line);
+				this.setCrashCommands(scan);
 			}
 			scan.close();
 		}catch(Exception e){
@@ -71,13 +73,19 @@ public class Server {
 		}
 	}
 	
-	private void setCrash(String line) throws Exception{
-		String[] crash = line.split(" ");
-		try{
-			this.numberOfServices = Integer.parseInt(crash[1]);
-			this.sleepDuration = Integer.parseInt(crash[2]);
-		}catch(Exception e){
-			throw new Exception("Could not determine the crash command. "+e.getMessage());
+	private void setCrashCommands(Scanner scan) throws Exception{
+		while(scan.hasNextLine()){
+			String[] crash = scan.nextLine().split(" ");
+			if(crash[0].equalsIgnoreCase("crash")){
+				try{
+					//				  .add(*********** K *********************, ********* Delta************);
+					this.crashCommands.add(new int[]{Integer.parseInt(crash[1]),Integer.parseInt(crash[2])});
+				}catch(Exception e){
+					throw new Exception("Could not determine the crash command. "+e.getMessage());
+				}
+			}else{
+				throw new Exception("Server does not accept commands other than \"crash\"");
+			}
 		}
 	}
 
@@ -121,7 +129,7 @@ public class Server {
 	 */
 	private void openDoorsForBusiness() {
 		//create socket monitors on both TCP and UDP and let the client requests flow
-			TCP_librarian librarian1 = new TCP_librarian(this.numberOfServices, this.sleepDuration);
+			TCP_librarian librarian1 = new TCP_librarian(this.crashCommands);
 			
 			humanResources.submit(librarian1);
 			
@@ -206,8 +214,8 @@ public class Server {
 	/**
 	 * Injection method
 	 */
-	protected String printDetails(){
-		return ("Number of commands= "+this.numberOfServices+" and sleep length= "+this.sleepDuration+" milliseconds");
+	protected String printCurrentCrashDetails(){
+		return ("Number of commands= "+this.crashCommands.get(0)[0]+" and sleep length= "+this.crashCommands.get(0)[1]+" milliseconds");
 	}
 	
 	
@@ -251,12 +259,19 @@ public class Server {
 	 * so it can continue to wait for new requests
 	 */
 	protected class TCP_librarian implements Runnable{
-		private int numOfCommands;
-		private int crashLength;
+		private int current_k;
+		private int current_delta;
+		private ArrayList<int[]> crashes;
 		
-		protected TCP_librarian(int num, int duration){
-			this.numOfCommands = num;
-			this.crashLength = duration;
+		protected TCP_librarian(ArrayList<int[]>commands){
+			this.crashes = commands;
+			if(this.crashes.size()>0){
+				this.current_k = this.crashes.get(0)[0];
+				this.current_delta = this.crashes.get(0)[1];
+			}else{
+				this.current_k = Integer.MAX_VALUE;
+				this.current_delta = 0;
+			}
 		}
 
 		@Override
@@ -264,16 +279,40 @@ public class Server {
 			try {
 				Socket sock; 
 				while((sock= TCPSocket.accept()) !=null){	//assignment inside the while condition so that it reassigns itself
-					this.numOfCommands--;
+					this.current_k--;
 					humanResources.submit(new TCP_librarian_service(sock));
-					if(this.numOfCommands==0){
-						Server.this.crash(this.crashLength);//TODO not sure if crash is working
+					if(this.current_k==0){
+						this.crash();//TODO not sure if crash is working
 					}
 				}
 			} catch (IOException e) {
 				System.err.println("Library server Shutdown: "+e);
 			}
 			
+		}
+		
+		private void crash(){
+			if(crashes.size()>0){
+				this.crashes.remove(0);
+			
+				try{
+					Thread.sleep(this.current_delta);
+				}catch(InterruptedException e){
+					System.err.println("Thread Crash Interrupted: "+e.getLocalizedMessage());
+				}
+				
+				if(this.crashes.size()>0){
+					this.current_k = this.crashes.get(0)[0];
+					this.current_delta = this.crashes.get(0)[1];
+				}else{
+					this.current_k = Integer.MAX_VALUE;
+					this.current_delta = 0;
+				}
+			}else{
+				this.current_k = Integer.MAX_VALUE;
+				this.current_delta = 0;
+			}
+
 		}
 	}
 	
