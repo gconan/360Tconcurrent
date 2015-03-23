@@ -40,45 +40,44 @@ public class Server {
 			}
 			
 			if(scan.hasNextLine()){
-					this.setCrash(line);
-			}else{
-					
+				line = scan.nextLine();
+				this.setCrash(line);
 			}
+			scan.close();
 		}catch(Exception e){
-			System.err.println("Library server not started: "+e);
+			System.err.println("Library server not started: "+e.getMessage());
 		}
 	}
 	
-	private void addNewReplica(String line, int id){
+	private void addNewReplica(String line, int id) throws Exception{
 		String[] creds = line.split(":");
 		if(creds.length!=2){
-			System.out.println("Bad Input, cant add new replica server");
-			System.exit(0);//TODO ok?
+			throw new Exception("Bad Input, cant add new replica server");
 		}else{
 			InetAddress ip = null;
 			int port = 0;
 			try{
 				ip = InetAddress.getByName(creds[0]);
 			}catch(UnknownHostException e){
-				System.out.println("Could not determine the IP address given. "+e.getMessage());
+				throw new Exception("Could not determine the IP address given. "+e.getMessage());
 			}
 			try{
 				port = Integer.parseInt(creds[1].trim());
 			}catch(NumberFormatException e){
-				System.out.println("Could not determine the port number given. " + e.getMessage());
+				throw new Exception("Could not determine the port number given. " + e.getMessage());
 			}
 			//TODO what do we do if the ip is local host vs not local host on the IDth add?
 			replicas.add(new ReplicaServers(id,ip, port));
 		}
 	}
 	
-	private void setCrash(String line){
+	private void setCrash(String line) throws Exception{
 		String[] crash = line.split(" ");
 		try{
 			this.numberOfServices = Integer.parseInt(crash[1]);
 			this.sleepDuration = Integer.parseInt(crash[2]);
-		}catch(NumberFormatException e){
-			System.out.println("Could not determine the crash command. "+e.getMessage());
+		}catch(Exception e){
+			throw new Exception("Could not determine the crash command. "+e.getMessage());
 		}
 	}
 
@@ -88,11 +87,14 @@ public class Server {
 	 * @throws NumberFormatException
 	 * @throws IOException
 	 */
-	private void configureServer(String configString) throws NumberFormatException, IOException {
+	private void configureServer(String configString) throws Exception {
 		//stock our library with books!
 			//trim in case of extra white space added by sloppy user
 		
 		String[] ints = configString.split(" ");
+		if(ints.length!=3){
+			throw new IOException("not enough args");
+		}
 		this.ID = Integer.parseInt(ints[0]);
 		this.numOfServers =  Integer.parseInt(ints[1]);
 		library = new ArrayList<String>();
@@ -105,7 +107,7 @@ public class Server {
 //			library.add("available");
 //		}
 //		int tcp = Integer.parseInt(configArgs[2].trim());
-//		try{
+//		try{TODO
 //			TCPSocket = new ServerSocket(tcp);
 //		}catch(Exception e){
 //			System.err.println("TCP error "+e);
@@ -191,7 +193,7 @@ public class Server {
 	}
 	
 	/**
-	 * Injectrion method
+	 * Injection method
 	 */
 	protected String printReplicaSet(){
 		String result = "";
@@ -200,6 +202,14 @@ public class Server {
 		}
 		return result;
 	}
+	
+	/**
+	 * Injection method
+	 */
+	protected String printDetails(){
+		return ("Number of commands= "+this.numberOfServices+" and sleep length= "+this.sleepDuration+" milliseconds");
+	}
+	
 	
 	
 	
