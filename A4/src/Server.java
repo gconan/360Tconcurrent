@@ -200,6 +200,15 @@ public class Server {
 	
 	public void sendRequestToServers() {
 		// TODO Auto-generated method stub
+		//send message to servers: request id clock
+		for(int i = 0; i < replicas.size(); i++){
+			int port = replicas.get(i).getPort();
+			InetAddress serverIP = replicas.get(i).getIP();
+			int id = this.ID;
+			int clock = this.getMyClock();
+			
+			
+		}
 		
 	}
 
