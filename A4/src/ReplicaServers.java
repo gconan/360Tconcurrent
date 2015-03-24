@@ -9,6 +9,7 @@ public class ReplicaServers {
 	private int port;
 	private long timeStamp;
 	private boolean requested;
+	private boolean acknowledged;
 	
 	public ReplicaServers( int ID, InetAddress IP, int prt){
 		this.alive = true;
@@ -17,6 +18,15 @@ public class ReplicaServers {
 		this.port = prt;
 		this.timeStamp = 0;
 		this.requested = true;
+		this.acknowledged = false;
+	}
+	
+	public void setAck(boolean b){
+		this.acknowledged = b;
+	}
+	
+	public boolean hasAck(){
+		return this.acknowledged;
 	}
 	
 	public boolean isCrashed(){
