@@ -327,12 +327,13 @@ public class Server {
 				pout.println(message);
 				int j=0;
 				while(din.hasNextLine()){
-					library.set(i, din.nextLine());
+					library.set(j, din.nextLine());
 					j+=1;
 				}
-				socket.close();
+				din.close();
 				pout.flush();
 				pout.close();
+				socket.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

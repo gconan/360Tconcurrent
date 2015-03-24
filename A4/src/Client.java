@@ -1,4 +1,3 @@
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -154,6 +153,7 @@ public class Client {
 			c.inputLines(sc.nextLine(), count);
 			count++;
 		}
+		sc.close();
 	}
 	
 }
