@@ -239,8 +239,15 @@ public class Server {
 				Scanner inputStream = new Scanner(sock.getInputStream());
 				PrintWriter outputStream = new PrintWriter(sock.getOutputStream());
 				String request = inputStream.nextLine();
-				String response = Server.this.process(request);
-				outputStream.println(response);
+				//if(request.split(" ")[0].equalsIgnoreCase("request")){
+				//	Server.this.processRequest(request);
+				//else if(request.split(" ")[0].equalsIgnoreCase("release")){
+				//	Server.this.processRelease(request);//should contain library update
+				//}else{
+				//	Server.this.sendRequestToServers();//sleep until awaken by processRelease()
+					String response = Server.this.process(request);
+					outputStream.println(response);
+				//}
 				outputStream.flush();
 		        outputStream.close();
 		        inputStream.close();
