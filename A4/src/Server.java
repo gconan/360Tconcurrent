@@ -222,7 +222,7 @@ public class Server {
 				Scanner din = new Scanner(server.getInputStream());
 				PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 				pout.println(message);
-				output = din.nextLine();//TODO how can I have a 100ms timeout?
+				output = din.nextLine();
 				System.out.println(output);
 				server.close();
 				din.close();
@@ -233,7 +233,7 @@ public class Server {
 					replicas.get(i).setAck(true); //set ack to true if we are assuming a crash
 					i++;
 				} else{
-					System.err.println("Socket issues");
+					System.err.println("Socket issues when sending requests");
 				}
 			}
 			
