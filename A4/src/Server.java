@@ -1,8 +1,10 @@
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -23,6 +25,8 @@ public class Server {
 	private int numOfServers;
 	private ArrayList<int[]> crashCommands;
 	private int myClock;
+	private InetAddress IP;//TODO init
+	private int port;//TODO init
 	
 	
 	/**
@@ -220,6 +224,7 @@ public class Server {
 				System.out.println(output);
 				server.close();
 				din.close();
+				pout.flush();
 				pout.close();
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -243,16 +248,43 @@ public class Server {
 
 	public void sendAcknowledgment(ArrayList<String> messageLines) {
 		String message = "acknowledge"+"\n"+this.ID;
+		int receipientId = Integer.parseInt(messageLines.get(1));
+		InetAddress receipientIP = replicas.get(receipientId).getIP();
+		int port = replicas.get(receipientId).getPort();
 		
+		try {
+			Socket socket = new Socket(receipientIP , port);
+			PrintWriter pout = new PrintWriter(socket.getOutputStream(), true);
+			pout.println(message);
+			socket.close();
+			pout.flush();
+			pout.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	
 	}
 	
-	public void sendLibraryRecover(){
+	public void sendLibraryRecover(ArrayList<String> messageLines){
 		String message = "";
 		for(String s: this.library){
 			message+=s +"\n";
 		}
-		message= message.substring(0, message.lastIndexOf("\n"));;
+		message= message.substring(0, message.lastIndexOf("\n"));
+		
+		InetAddress ip = replicas.get(Integer.parseInt(messageLines.get(1))).getIP();
+		int prt = replicas.get(Integer.parseInt(messageLines.get(1))).getPort();
+		
+		try {
+			Socket socket = new Socket(ip , prt);
+			PrintWriter pout = new PrintWriter(socket.getOutputStream(), true);
+			pout.print(message);
+			pout.flush();
+			pout.close();
+			socket.close();
+		}catch(Exception e){
+			
+		}
 	}
 	
 	public void recoverLibrary() {
@@ -261,7 +293,43 @@ public class Server {
 		// available
 		// reserved
 		//....line number cooresponds to booknum-1
-		String message = "recover";
+		String message = "recover"+"\n"+ID+"\n"+IP+"\n"+port;
+		
+		boolean connected = false;
+		int i=0;
+		Socket socket = new Socket();
+		
+		while(!connected && i<replicas.size()){
+			InetAddress receipientIP = replicas.get(0).getIP();
+			int port = replicas.get(0).getPort();
+			
+			try {
+				socket.connect(new InetSocketAddress(receipientIP , port), 100);
+				connected = true;
+			}catch(Exception e){
+				if(e.getClass() == SocketTimeoutException.class){
+					i+=1;
+				}else{
+					System.err.println("Socket issue");
+				}
+			}
+			//should have a connection to one of the servers
+			try{
+				PrintWriter pout = new PrintWriter(socket.getOutputStream(), true);
+				Scanner din = new Scanner(socket.getInputStream());
+				pout.println(message);
+				int j=0;
+				while(din.hasNextLine()){
+					library.set(i, din.nextLine());
+					j+=1;
+				}
+				socket.close();
+				pout.flush();
+				pout.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	protected void clockUp(){
@@ -341,8 +409,9 @@ public class Server {
 					
 				//RECOVER
 				}else if(request.split(" ")[0].equalsIgnoreCase("recover")){
+					getFullMessage(request, inputStream, 4);
 					Server.this.sendRequestToServers();
-					Server.this.sendLibraryRecover();
+					Server.this.sendLibraryRecover(messageLines);
 					
 				//CLIENT
 				}else{
