@@ -233,7 +233,7 @@ public class Server {
 					replicas.get(i).setAck(true); //set ack to true if we are assuming a crash
 					i++;
 				} else{
-					System.err.println("Socket issues");
+					System.err.println("Socket issues when sending requests");
 				}
 			}
 			

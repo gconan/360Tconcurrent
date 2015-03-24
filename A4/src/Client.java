@@ -1,7 +1,9 @@
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -46,14 +48,12 @@ public class Client {
 	 */
 	public void inputLines(String line, int count){ 
 		char[] check = line.toCharArray();
-		
 		if(check[0] != 'b' && check[0] != 's'){
 			String[] words = line.split(":");
 			InetAddress tempIP = null;
 			try {
 				tempIP = InetAddress.getByName(words[0]);
 			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			int port = Integer.parseInt(words[1]);
@@ -93,35 +93,37 @@ public class Client {
 			InetAddress serverIP = null;
 			int serverPort = 0;
 			ReplicaServers temp;
+			boolean connected = false;
 			//look for closest noncrashed server
-			if(servList.size() == 0){
-				return;
-			}
-			for(int i = 0; i < servList.size(); i++){
+			int i = 0;
+			while(i < servList.size() && !connected){
 				temp = servList.get(i);
-				if(temp.isCrashed()){
-					i++;
-				} else{
-					serverIP = temp.getIP();
-					serverPort = temp.getPort();
-					break;
-				}
+				serverIP = temp.getIP();
+				serverPort = temp.getPort();
+				try {
+					Socket server = new Socket();
+					server.connect(new InetSocketAddress(serverIP, serverPort), 100);
+					Scanner din = new Scanner(server.getInputStream());
+					PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
+					pout.println(call);
+					output = din.nextLine();
+					System.out.println(output);
+					server.close();
+					din.close();
+					pout.close();
+				} catch (Exception e) {
+					if(e.getClass() == SocketTimeoutException.class){
+						//try next server
+						servList.get(i).setAck(true); //set ack to true if we are assuming a crash
+						i++;
+					} else{
+						System.err.println("Socket issues connecting client to server");
+					}
+				}	
 			}
 			
 			
-			try {
-				Socket server = new Socket(serverIP , serverPort);
-				Scanner din = new Scanner(server.getInputStream());
-				PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
-				pout.println(call);
-				output = din.nextLine();
-				System.out.println(output);
-				server.close();
-				din.close();
-				pout.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			
 		
 		
 	}
