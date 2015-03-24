@@ -1,8 +1,10 @@
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -200,10 +202,13 @@ public class Server {
 		return returnValue.getBytes();
 	}
 	
+	/**
+	 * send requests to each server. if one doesn't respond, assume dead and move along.
+	 */
 	public void sendRequestToServers() {
-		// TODO Auto-generated method stub
-		//send message to servers: request id clock
-		for(int i = 0; i < replicas.size(); i++){
+		//send message to servers: request, id, clock
+		int i = 0;
+		while(i < replicas.size()){
 			String output;
 			int port = replicas.get(i).getPort();
 			InetAddress serverIP = replicas.get(i).getIP();
@@ -212,17 +217,24 @@ public class Server {
 			String message = "request" + "\n" + id + "\n" + clock;
 			
 			try {
-				Socket server = new Socket(serverIP , port);
+				Socket server = new Socket();
+				server.connect(new InetSocketAddress(serverIP, port), 100);
 				Scanner din = new Scanner(server.getInputStream());
 				PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 				pout.println(message);
-				output = din.nextLine();
+				output = din.nextLine();//TODO how can I have a 100ms timeout?
 				System.out.println(output);
 				server.close();
 				din.close();
 				pout.close();
-			} catch (IOException e) {
-				e.printStackTrace();
+			} catch (Exception e) {
+				if(e.getClass() == SocketTimeoutException.class){
+					//try next server
+					replicas.get(i).setAck(true); //set ack to true if we are assuming a crash
+					i++;
+				} else{
+					System.err.println("Socket issues");
+				}
 			}
 			
 			
