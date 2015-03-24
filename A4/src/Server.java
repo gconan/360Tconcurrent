@@ -202,10 +202,27 @@ public class Server {
 		// TODO Auto-generated method stub
 		//send message to servers: request id clock
 		for(int i = 0; i < replicas.size(); i++){
+			String output;
 			int port = replicas.get(i).getPort();
 			InetAddress serverIP = replicas.get(i).getIP();
 			int id = this.ID;
 			int clock = this.getMyClock();
+			String message = "request" + "\n" + id + "\n" + clock;
+			
+			try {
+				Socket server = new Socket(serverIP , port);
+				Scanner din = new Scanner(server.getInputStream());
+				PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
+				pout.println(message);
+				output = din.nextLine();
+				System.out.println(output);
+				server.close();
+				din.close();
+				pout.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
 			
 			
 		}
