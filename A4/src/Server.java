@@ -22,12 +22,15 @@ public class Server {
 	private ExecutorService humanResources;
 	private int numOfServers;
 	private ArrayList<int[]> crashCommands;
+	private int myClock;
+	
 	
 	/**
 	 * constructor for the libarary server
 	 * takes in standard input and configures the server with the given information
 	 */
 	public Server(Scanner scan){
+		this.myClock = 0;
 		humanResources = Executors.newCachedThreadPool();
 		this.replicas = new ArrayList<ReplicaServers>();
 		this.crashCommands = new ArrayList<int[]>();
@@ -195,6 +198,29 @@ public class Server {
 		return returnValue.getBytes();
 	}
 	
+	public void sendRequestToServers() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void processRelease(ArrayList<String> messageLines) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void sendAcknowledgment(ArrayList<String> messageLines) {
+	// TODO Auto-generated method stub
+	
+	}
+	
+	protected void clockUp(){
+		this.myClock++;
+	}
+	
+	protected int getMyClock(){
+		return this.myClock;
+	}
+	
 	/**
 	 * Injection method
 	 */
@@ -215,7 +241,6 @@ public class Server {
 	
 	
 	
-	
 //********************************************************NESTED TCP HANDLER CLASSES*********************************************
 	//runnable classes allow for multiple threads to monitor the socket and service requests
 	
@@ -227,11 +252,16 @@ public class Server {
 	 *
 	 */
 	protected class TCP_librarian_service implements Runnable{
-		Socket sock;
-		ArrayList<String> messageLines;
+		protected Socket sock;
+		protected ArrayList<String> messageLines;
+		protected ArrayList<Integer> reqQueue;
+		protected Boolean imInterested;
+		
 		protected TCP_librarian_service(Socket soc){
 			this.sock = soc;
 			messageLines = new ArrayList<String>();
+			this.reqQueue = new ArrayList<Integer>();
+			this.imInterested = false;
 		}
 		
 		@Override
@@ -244,21 +274,25 @@ public class Server {
 				}
 				PrintWriter outputStream = new PrintWriter(sock.getOutputStream());
 				String request = inputStream.nextLine();
-				//if(request.split(" ")[0].equalsIgnoreCase("request")){
-				//	getFullMessage(request, inputStream, 3);
-				//	if(getReqClock(req
-				//else if(request.split(" ")[0].equalsIgnoreCase("release")){
-				//	getFullMessage(request, inputStream, 4);
-				//	Server.this.processRelease(request);	//should contain library update
-				//else if(request.split(" ")[0].equalsIgnoreCase("acknowledge")){
-				//	getFullMessage(request, inputStream, 2);
-				//}else{
-				//	imInterested = true;
-				//	Server.this.sendRequestToServers();	//wait (100ms) for all acks
-				//	
+				if(request.split(" ")[0].equalsIgnoreCase("request")){
+					getFullMessage(request, inputStream, 3);
+					if(Integer.parseInt(messageLines.get(2))<Server.this.getMyClock() || !imInterested){
+						Server.this.sendAcknowledgment(messageLines);
+					}else{
+						this.reqQueue.add(Integer.parseInt(messageLines.get(1)));
+					}
+				}else if(request.split(" ")[0].equalsIgnoreCase("release")){
+					getFullMessage(request, inputStream, 4);
+					Server.this.processRelease(messageLines);	//should contain library update
+				}else if(request.split(" ")[0].equalsIgnoreCase("acknowledge")){
+					getFullMessage(request, inputStream, 2);
+				}else{
+					imInterested = true;
+					Server.this.sendRequestToServers();	//wait (100ms) for all acks
+					
 					String response = Server.this.process(request);
 					outputStream.println(response);
-				//}
+				}
 				outputStream.flush();
 		        outputStream.close();
 		        inputStream.close();
@@ -304,6 +338,7 @@ public class Server {
 					if(this.current_k==0){	//if no crash set, then current_k will be negative and never crash
 						this.crash();//TODO not sure if crash is working
 					}
+					Server.this.clockUp();
 				}
 			} catch (IOException e) {
 				System.err.println("Library server Shutdown: "+e);
