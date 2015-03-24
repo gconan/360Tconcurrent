@@ -228,23 +228,34 @@ public class Server {
 	 */
 	protected class TCP_librarian_service implements Runnable{
 		Socket sock;
-		
+		ArrayList<String> messageLines;
 		protected TCP_librarian_service(Socket soc){
 			this.sock = soc;
+			messageLines = new ArrayList<String>();
 		}
 		
 		@Override
 		public void run() {	//service client request
 			try {	//similar to serverThread on Professor Garg's github	
 				Scanner inputStream = new Scanner(sock.getInputStream());
+				while(inputStream.hasNextLine()){//change to for loop with correct number of line? TODO
+					messageLines.add(inputStream.nextLine());
+					
+				}
 				PrintWriter outputStream = new PrintWriter(sock.getOutputStream());
 				String request = inputStream.nextLine();
 				//if(request.split(" ")[0].equalsIgnoreCase("request")){
-				//	Server.this.processRequest(request);
+				//	getFullMessage(request, inputStream, 3);
+				//	if(getReqClock(req
 				//else if(request.split(" ")[0].equalsIgnoreCase("release")){
-				//	Server.this.processRelease(request);//should contain library update
+				//	getFullMessage(request, inputStream, 4);
+				//	Server.this.processRelease(request);	//should contain library update
+				//else if(request.split(" ")[0].equalsIgnoreCase("acknowledge")){
+				//	getFullMessage(request, inputStream, 2);
 				//}else{
-				//	Server.this.sendRequestToServers();//sleep until awaken by processRelease()
+				//	imInterested = true;
+				//	Server.this.sendRequestToServers();	//wait (100ms) for all acks
+				//	
 					String response = Server.this.process(request);
 					outputStream.println(response);
 				//}
@@ -254,6 +265,13 @@ public class Server {
 		        sock.close();
 			}catch (IOException e) {
 				System.err.println("Library server Shutdown: "+e);
+			}
+		}
+		
+		private void getFullMessage(String request, Scanner inputStream, int messageLength){
+			messageLines.add(request);
+			for(int i=0; i<messageLength; i++){
+				messageLines.add(inputStream.nextLine());
 			}
 		}
 	}
