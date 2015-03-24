@@ -36,7 +36,7 @@ public class Server {
 		this.crashCommands = new ArrayList<int[]>();
 		try{
 			String line = scan.nextLine();
-			this.configureServer(line);//TODO use a for loop for number of servers
+			this.configureServer(line);
 			for(int i=1; i<=this.numOfServers; i++){
 				line = scan.nextLine();
 				if(this.ID ==  i){
@@ -143,7 +143,9 @@ public class Server {
 	}
 	
 	protected void crash(){
-		this.library.clear();
+		for(int i=0; i<this.library.size(); i++){
+			this.library.set(i, "available");
+		}
 	}
 	
 	/**
@@ -204,13 +206,36 @@ public class Server {
 	}
 
 	public void processRelease(ArrayList<String> messageLines) {
-		// TODO Auto-generated method stub
+		int releaseID = Integer.parseInt(messageLines.get(1));
+		int bookNum = Integer.parseInt(messageLines.get(2));
+		String status = messageLines.get(3);
+		
+		this.replicas.get(releaseID-1).setAck(true);
+		this.library.set(bookNum-1, status);
 		
 	}
 
 	public void sendAcknowledgment(ArrayList<String> messageLines) {
-	// TODO Auto-generated method stub
+		String message = "acknowledge"+"\n"+this.ID;
+		
 	
+	}
+	
+	public void sendLibraryRecover(){
+		String message = "";
+		for(String s: this.library){
+			message+=s +"\n";
+		}
+		message= message.substring(0, message.lastIndexOf("\n"));;
+	}
+	
+	public void recoverLibrary() {
+		//send message to a server and ask for library
+		//receive message with lib data in the form:
+		// available
+		// reserved
+		//....line number cooresponds to booknum-1
+		String message = "recover";
 	}
 	
 	protected void clockUp(){
@@ -268,12 +293,9 @@ public class Server {
 		public void run() {	//service client request
 			try {	//similar to serverThread on Professor Garg's github	
 				Scanner inputStream = new Scanner(sock.getInputStream());
-				while(inputStream.hasNextLine()){//change to for loop with correct number of line? TODO
-					messageLines.add(inputStream.nextLine());
-					
-				}
 				PrintWriter outputStream = new PrintWriter(sock.getOutputStream());
 				String request = inputStream.nextLine();
+				//REQUEST
 				if(request.split(" ")[0].equalsIgnoreCase("request")){
 					getFullMessage(request, inputStream, 3);
 					if(Integer.parseInt(messageLines.get(2))<Server.this.getMyClock() || !imInterested){
@@ -281,11 +303,22 @@ public class Server {
 					}else{
 						this.reqQueue.add(Integer.parseInt(messageLines.get(1)));
 					}
+					
+				//RELEASE
 				}else if(request.split(" ")[0].equalsIgnoreCase("release")){
 					getFullMessage(request, inputStream, 4);
 					Server.this.processRelease(messageLines);	//should contain library update
+					
+				//ACKNOWLEDGE
 				}else if(request.split(" ")[0].equalsIgnoreCase("acknowledge")){
 					getFullMessage(request, inputStream, 2);
+					
+				//RECOVER
+				}else if(request.split(" ")[0].equalsIgnoreCase("recover")){
+					Server.this.sendRequestToServers();
+					Server.this.sendLibraryRecover();
+					
+				//CLIENT
 				}else{
 					imInterested = true;
 					Server.this.sendRequestToServers();	//wait (100ms) for all acks
@@ -367,7 +400,7 @@ public class Server {
 				this.current_k = 0;
 				this.current_delta = 0;
 			}
-
+			Server.this.recoverLibrary();
 		}
 	}
 	
