@@ -44,7 +44,17 @@ public class Server {
 			for(int i=1; i<=this.numOfServers; i++){
 				line = scan.nextLine();
 				if(this.ID ==  i){
-					
+					String[] ipconfig = line.split(":");
+					if(InetAddress.getLocalHost()==InetAddress.getByName(ipconfig[0])){
+						int port = Integer.parseInt(ipconfig[1].trim());
+						try{
+							TCPSocket = new ServerSocket(port);
+						}catch(Exception e){
+							throw new Exception("TCP error: "+e.getLocalizedMessage());
+						}
+					}else{
+						throw new Exception("This ID is already linked to another IP address. Server not starting");
+					}
 				}
 				this.addNewReplica(line, i);
 			}
@@ -116,18 +126,6 @@ public class Server {
 		for(int i=0; i<Integer.parseInt(ints[2].trim()); i++){//changed to 1 for A4 requirement
 			library.add("available");
 		}
-//		String[] configArgs = configString.split(" ");
-//		library = new ArrayList<String>();
-//		for(int i=0; i<Integer.parseInt(configArgs[1].trim()); i++){//changed to 1 for A4 requirement
-//			library.add("available");
-//		}
-//		int tcp = Integer.parseInt(configArgs[2].trim());
-//		try{TODO
-//			TCPSocket = new ServerSocket(tcp);
-//		}catch(Exception e){
-//			System.err.println("TCP error "+e);
-//		}
-		
 	}
 	
 	/**
@@ -186,7 +184,6 @@ public class Server {
 				return ("fail "+clientID+" b"+(bookNum+1));
 			}
 		}else{
-			//TODO what to return?
 			
 		}
 		return null;
@@ -224,7 +221,7 @@ public class Server {
 				Scanner din = new Scanner(server.getInputStream());
 				PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 				pout.println(message);
-				output = din.nextLine();//TODO how can I have a 100ms timeout?
+				output = din.nextLine();
 				System.out.println(output);
 				server.close();
 				din.close();
@@ -474,7 +471,7 @@ public class Server {
 					this.current_k--;
 					humanResources.submit(new TCP_librarian_service(sock));
 					if(this.current_k==0){	//if no crash set, then current_k will be negative and never crash
-						this.crash();//TODO not sure if crash is working
+						this.crash();// not sure if crash is working
 					}
 					Server.this.clockUp();
 				}
