@@ -48,8 +48,10 @@ public class Client {
 	 * @param servs
 	 * @param count
 	 */
-	public void inputLines(String line, int servs, int count){ //TODO fix this stupid method
-		if(servs > 0 && count < servs){
+	public void inputLines(String line, int count){ 
+		char[] check = line.toCharArray();
+		
+		if(check[0] != 'b' && check[0] != 's'){
 			String[] words = line.split(":");
 			InetAddress tempIP = null;
 			try {
@@ -75,10 +77,8 @@ public class Client {
 				}
 				return;
 			}
-			int port = Integer.parseInt(words[2]);
-			String protocol = words[3];
 			
-			serverCall(bookNumber, action, port, protocol);
+			serverCall(bookNumber, action);
 		}
 		
 	}
@@ -90,7 +90,7 @@ public class Client {
 	 * @param port
 	 * @param protocol
 	 */
-	public void serverCall(String book, String action, int port, String protocol){
+	public void serverCall(String book, String action){
 		String call = ID + " " + book + " " + action;
 			//TCP stuff
 			String output;
@@ -101,7 +101,7 @@ public class Client {
 			if(servList.size() == 0){
 				return;
 			}
-			for(int i = 0; i < servList.size(); i ++){
+			for(int i = 0; i < servList.size(); i++){
 				temp = servList.get(i);
 				if(temp.isCrashed()){
 					i++;
@@ -120,6 +120,7 @@ public class Client {
 				pout.println(call);
 				output = din.nextLine();
 				System.out.println(output);
+				server.close();
 				din.close();
 				pout.close();
 			} catch (IOException e) {
@@ -150,15 +151,10 @@ public class Client {
 		Client c = new Client();
 		Scanner sc = new Scanner(System.in);
 		int servs = c.inputFirstLine(sc.nextLine());
-		int i = 0;
-		//i is counting through # of lines that specify a server
-		while(sc.hasNextLine() && servs > 0){
-			c.inputLines(sc.nextLine(), servs, i);
-			servs--;
-			i++;
-		}
+		int count = 0; //number of servers specified in client input file
 		while(sc.hasNextLine()){
-			c.inputLines(sc.nextLine(), servs, i);
+			c.inputLines(sc.nextLine(), count);
+			count++;
 		}
 	}
 	
