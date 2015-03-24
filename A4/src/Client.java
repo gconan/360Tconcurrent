@@ -10,7 +10,11 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-
+/**
+ * 
+ * @author Michael
+ *	client that sends requests via TCP to a library server
+ */
 public class Client {
 	private String ID;
 	private InetAddress IP;
@@ -18,12 +22,19 @@ public class Client {
 	ArrayList<ReplicaServers> servList = new ArrayList<ReplicaServers>();
 	byte[] rbuffer = new byte[1024];
 	
+	/**
+	 * simple Client constructor
+	 */
 	public Client(){
 		this.ID = null;
 		this.IP = null;
 	}
 	
-	
+	/**
+	 * parses first line of client input file
+	 * @param line
+	 * @return
+	 */
 	public int inputFirstLine(String line){
 		String[] lineOne = line.split(" ");
 		this.ID = lineOne[0];
@@ -31,8 +42,14 @@ public class Client {
 		return numServs;
 	}
 	
-	public void inputLines(String line, int servs, int count){
-		if(servs > 0){
+	/**
+	 * parses remaining lines of client input file
+	 * @param line
+	 * @param servs
+	 * @param count
+	 */
+	public void inputLines(String line, int servs, int count){ //TODO fix this stupid method
+		if(servs > 0 && count < servs){
 			String[] words = line.split(":");
 			InetAddress tempIP = null;
 			try {
@@ -66,6 +83,13 @@ public class Client {
 		
 	}
 	
+	/**
+	 * once client input is parsed, send requests to server
+	 * @param book
+	 * @param action
+	 * @param port
+	 * @param protocol
+	 */
 	public void serverCall(String book, String action, int port, String protocol){
 		String call = ID + " " + book + " " + action;
 			//TCP stuff
@@ -105,6 +129,10 @@ public class Client {
 		
 	}
 	
+	/**
+	 * print server list
+	 * @return
+	 */
 	protected String printReplicaSet(){
 		String result = "";
 		for(ReplicaServers s: this.servList){
@@ -114,11 +142,16 @@ public class Client {
 		return result;
 	}
 	
+	/**
+	 * reads through client files
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		Client c = new Client();
 		Scanner sc = new Scanner(System.in);
 		int servs = c.inputFirstLine(sc.nextLine());
 		int i = 0;
+		//i is counting through # of lines that specify a server
 		while(sc.hasNextLine() && servs > 0){
 			c.inputLines(sc.nextLine(), servs, i);
 			servs--;
