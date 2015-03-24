@@ -14,6 +14,8 @@ public class TestClientInput {
 		testclient.inputLines("127.0.0.1:8025", 0);
 		testclient.inputLines("128.0.0.1:8030", 1);
 		testclient.inputLines("b8 reserve", 2);
+		testclient.inputLines("b2 return", 3);
+		testclient.inputLines("b2 reserve", 4);
 		String result = testclient.printReplicaSet();
 		
 		
