@@ -105,6 +105,15 @@ public class Client {
 		
 	}
 	
+	protected String printReplicaSet(){
+		String result = "";
+		for(ReplicaServers s: this.servList){
+			result+=s.toString()+" ";
+		}
+		System.out.println(result);
+		return result;
+	}
+	
 	public static void main(String[] args) {
 		Client c = new Client();
 		Scanner sc = new Scanner(System.in);
