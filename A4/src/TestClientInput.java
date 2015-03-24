@@ -19,7 +19,10 @@ public class TestClientInput {
 		assertTrue(result.equals("Server 1 is on IP: /127.0.0.1 and port number 8025 Server 2 is on IP: /128.0.0.1 and port number 8030 "));
 	}
 		
+<<<<<<< HEAD
 	@Test
+=======
+>>>>>>> 1da86628451f2e472c30082fa585a9f88abe69c3
 	public void testSimpleInputFile() {
 		Client testclient = new Client();
 		testclient.inputFirstLine("c1 2");	
@@ -28,8 +31,12 @@ public class TestClientInput {
 		testclient.inputLines("sleep 1500", 2, 2);
 		String result = testclient.printReplicaSet();
 		
+<<<<<<< HEAD
 		
 		assertTrue(result.equals("Server 1 is on IP: /127.0.0.1 and port number 8025 Server 2 is on IP: /128.0.0.1 and port number 8030 "));
+=======
+		assertTrue(result.equals("Server 1 is on IP: /127.0.0.1 and port number 8080 Server 2 is on IP: /128.0.0.1 and port number 9005 "));
+>>>>>>> 1da86628451f2e472c30082fa585a9f88abe69c3
 	}
 
 }

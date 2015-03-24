@@ -139,13 +139,8 @@ public class Server {
 			}
 	}
 	
-	protected void crash(int duration){
+	protected void crash(){
 		this.library.clear();
-		try{
-			Thread.sleep(duration);
-		}catch(InterruptedException e){
-			System.out.println("Server ID: "+this.ID+" crash interrupted");
-		}
 	}
 	
 	/**
@@ -221,9 +216,11 @@ public class Server {
 	
 	
 	
-//********************************************************NESTED CLASS: TCP MONITOR*********************************************
+//********************************************************NESTED TCP HANDLER CLASSES*********************************************
 	//runnable classes allow for multiple threads to monitor the socket and service requests
 	
+	
+
 	/**
 	 * takes a request from the TCP_libarian and processes it
 	 * @author conangammel
@@ -242,8 +239,15 @@ public class Server {
 				Scanner inputStream = new Scanner(sock.getInputStream());
 				PrintWriter outputStream = new PrintWriter(sock.getOutputStream());
 				String request = inputStream.nextLine();
-				String response = Server.this.process(request);
-				outputStream.println(response);
+				//if(request.split(" ")[0].equalsIgnoreCase("request")){
+				//	Server.this.processRequest(request);
+				//else if(request.split(" ")[0].equalsIgnoreCase("release")){
+				//	Server.this.processRelease(request);//should contain library update
+				//}else{
+				//	Server.this.sendRequestToServers();//sleep until awaken by processRelease()
+					String response = Server.this.process(request);
+					outputStream.println(response);
+				//}
 				outputStream.flush();
 		        outputStream.close();
 		        inputStream.close();
@@ -254,6 +258,7 @@ public class Server {
 		}
 	}
 	
+//listens on tcp then services requests by submitting a librarian_service
 	/**
 	 * Waits for a TCP request then sends it off for processing to TCP_librarian_service 
 	 * so it can continue to wait for new requests
@@ -263,14 +268,11 @@ public class Server {
 		private int current_delta;
 		private ArrayList<int[]> crashes;
 		
-		protected TCP_librarian(ArrayList<int[]>commands){
-			this.crashes = commands;
+		protected TCP_librarian(ArrayList<int[]>crashCommands){
+			this.crashes = crashCommands;
 			if(this.crashes.size()>0){
 				this.current_k = this.crashes.get(0)[0];
 				this.current_delta = this.crashes.get(0)[1];
-			}else{
-				this.current_k = Integer.MAX_VALUE;
-				this.current_delta = 0;
 			}
 		}
 
@@ -281,7 +283,7 @@ public class Server {
 				while((sock= TCPSocket.accept()) !=null){	//assignment inside the while condition so that it reassigns itself
 					this.current_k--;
 					humanResources.submit(new TCP_librarian_service(sock));
-					if(this.current_k==0){
+					if(this.current_k==0){	//if no crash set, then current_k will be negative and never crash
 						this.crash();//TODO not sure if crash is working
 					}
 				}
@@ -294,22 +296,22 @@ public class Server {
 		private void crash(){
 			if(crashes.size()>0){
 				this.crashes.remove(0);
-			
+				Server.this.crash();
 				try{
 					Thread.sleep(this.current_delta);
 				}catch(InterruptedException e){
 					System.err.println("Thread Crash Interrupted: "+e.getLocalizedMessage());
 				}
-				
+				//update to next crash command
 				if(this.crashes.size()>0){
 					this.current_k = this.crashes.get(0)[0];
 					this.current_delta = this.crashes.get(0)[1];
-				}else{
-					this.current_k = Integer.MAX_VALUE;
+				}else{//if out of crash commands, then set to zero, will not crash again
+					this.current_k = 0;
 					this.current_delta = 0;
 				}
-			}else{
-				this.current_k = Integer.MAX_VALUE;
+			}else{//could be unreachable code
+				this.current_k = 0;
 				this.current_delta = 0;
 			}
 
