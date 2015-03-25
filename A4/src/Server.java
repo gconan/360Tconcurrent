@@ -25,8 +25,9 @@ public class Server {
 	private int numOfServers;
 	private ArrayList<int[]> crashCommands;
 	private int myClock;
-	private InetAddress IP;//TODO init
-	private int port;//TODO init
+	private InetAddress IP;
+	private int port;
+	private boolean csReady;
 	
 	
 	/**
@@ -35,6 +36,7 @@ public class Server {
 	 */
 	public Server(Scanner scan){
 		this.myClock = 0;
+		this.csReady = false;
 		humanResources = Executors.newCachedThreadPool();
 		this.replicas = new ArrayList<ReplicaServers>();
 		this.crashCommands = new ArrayList<int[]>();
@@ -46,7 +48,8 @@ public class Server {
 				if(this.ID ==  i){
 					String[] ipconfig = line.split(":");
 					//if(InetAddress.getLocalHost()==InetAddress.getByName(ipconfig[0])){
-						int port = Integer.parseInt(ipconfig[1].trim());
+						port = Integer.parseInt(ipconfig[1].trim());
+						IP = InetAddress.getByName(ipconfig[0]);
 						try{
 							TCPSocket = new ServerSocket(port);
 							System.out.println("socket did not throw an exception, this socket open");//TODO remove
@@ -139,7 +142,7 @@ public class Server {
 	private void openDoorsForBusiness() {
 		//create socket monitors on both TCP and UDP and let the client requests flow
 			TCP_librarian librarian1 = new TCP_librarian(this.crashCommands);
-			
+			System.out.println("submitting TCP listener on IP: "+IP+" on port: "+port);
 			humanResources.submit(librarian1);
 			
 			while(true){
@@ -225,8 +228,6 @@ public class Server {
 				Scanner din = new Scanner(server.getInputStream());
 				PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 				pout.println(message);
-				output = din.nextLine();
-				System.out.println(output);
 				server.close();
 				din.close();
 				pout.flush();
@@ -237,13 +238,19 @@ public class Server {
 					replicas.get(i).setAck(true); //set ack to true if we are assuming a crash
 					i++;
 				} else{
-					System.err.println("Socket issues when sending requests");//TODO remove
+					System.err.println("Socket issues when sending requests   exception: "+e.getLocalizedMessage());//TODO remove
 					i++;
 				}
 			}
-			
-			
-			
+		}
+		while(!csReady){//wait while we wait for acks
+			csReady = true;
+			for(ReplicaServers s: replicas){
+				if(!s.hasAck()){
+					csReady = false;
+					break;
+				}
+			}
 		}
 		
 	}
@@ -311,7 +318,7 @@ public class Server {
 		int i=0;
 		Socket socket = new Socket();
 		
-		while(!connected && i<replicas.size()){
+		while(!connected){
 			InetAddress receipientIP = replicas.get(0).getIP();
 			int port = replicas.get(0).getPort();
 			
@@ -320,7 +327,7 @@ public class Server {
 				connected = true;
 			}catch(Exception e){
 				if(e.getClass() == SocketTimeoutException.class){
-					i+=1;
+					i= (i+1)%replicas.size();
 				}else{
 					System.err.println("Socket issue");
 				}
@@ -430,7 +437,6 @@ public class Server {
 				}else{
 					imInterested = true;
 					Server.this.sendRequestToServers();	//wait (100ms) for all acks
-					
 					String response = Server.this.process(request);
 					outputStream.println(response);
 				}

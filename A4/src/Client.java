@@ -105,6 +105,7 @@ public class Client {
 				try {
 					Socket server = new Socket();
 					server.connect(new InetSocketAddress(serverIP, serverPort), 100);
+					connected= true;
 					Scanner din = new Scanner(server.getInputStream());
 					PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 					pout.println(call);
