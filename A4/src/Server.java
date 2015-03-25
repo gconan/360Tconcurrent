@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * hosts a library server to which a client can make UDP or TCP requests to reserve/return books
@@ -492,6 +493,7 @@ public class Server {
 				System.out.println("setting crash stats");//TODO remove
 				this.current_k = this.crashes.get(0)[0];
 				this.current_delta = this.crashes.get(0)[1];
+				System.out.println("current k: " + current_k + " current delta: " + current_delta);
 			}
 		}
 
