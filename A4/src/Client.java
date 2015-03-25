@@ -120,11 +120,6 @@ public class Client {
 					}
 				}	
 			}
-			
-			
-			
-		
-		
 	}
 	
 	/**
