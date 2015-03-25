@@ -22,6 +22,7 @@ public class ReplicaServers {
 	}
 	
 	public void setAck(boolean b){
+		System.out.println("Attempting to set ack");
 		this.acknowledged = b;
 	}
 	
@@ -63,7 +64,7 @@ public class ReplicaServers {
 	
 	@Override
 	public String toString(){
-		return ("Server "+id+" is on IP: "+ip.toString()+" and port number "+port);
+		return ("Server "+id+" is on IP: "+ip.toString()+" and port number "+port + ". Ack status: " + this.acknowledged);
 	}
 	
 }

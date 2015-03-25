@@ -27,13 +27,14 @@ public class Server {
 	private int myClock;
 	private InetAddress IP;//TODO init
 	private int port;//TODO init
-	
+	private boolean csReady;
 	
 	/**
 	 * constructor for the libarary server
 	 * takes in standard input and configures the server with the given information
 	 */
 	public Server(Scanner scan){
+		this.csReady = false;
 		this.myClock = 0;
 		humanResources = Executors.newCachedThreadPool();
 		this.replicas = new ArrayList<ReplicaServers>();
@@ -210,11 +211,12 @@ public class Server {
 	 */
 	public void sendRequestToServers() {
 		//send message to servers: request, id, clock
-		System.out.println("sending request to other server");
+		System.out.println("sending request to other server" + this.printReplicaSet());
 		int i = 0;
 		while(i < replicas.size()){
 			int id = this.ID;
 			if(replicas.get(i).getID() == id){
+				replicas.get(i).setAck(true);
 				i++;
 			}
 			String output;
@@ -230,7 +232,7 @@ public class Server {
 				PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 				pout.println(message);
 				output = din.nextLine();
-				System.out.println(output);
+				//System.out.println(output);
 				server.close();
 				din.close();
 				pout.flush();
@@ -245,12 +247,19 @@ public class Server {
 					System.err.println("Socket issues when sending requests");//TODO remove
 					i++;
 				}
-			}
-			
-			
-			
+			}	
 		}
 		
+		while(!csReady){
+			csReady=true;
+			for(ReplicaServers s: replicas){
+				if(!s.hasAck()){
+					csReady=false;
+					break;
+				}
+			}
+		}
+		System.out.println("Out of ack loop");
 	}
 
 	public void processRelease(ArrayList<String> messageLines) {
@@ -265,9 +274,11 @@ public class Server {
 
 	public void sendAcknowledgment(ArrayList<String> messageLines) {
 		String message = "acknowledge"+"\n"+this.ID;
+		System.out.println("Server " + this.ID + " " + messageLines.toString());
 		int receipientId = Integer.parseInt(messageLines.get(1));
-		InetAddress receipientIP = replicas.get(receipientId).getIP();
-		int port = replicas.get(receipientId).getPort();
+		InetAddress receipientIP = replicas.get(receipientId-1).getIP();
+		int port = replicas.get(receipientId-1).getPort();
+		System.out.println("Server " + receipientIP.toString() + " port " + port);
 		
 		try {
 			Socket socket = new Socket(receipientIP , port);
@@ -412,7 +423,7 @@ public class Server {
 					System.out.println("WE GOT A REQUEST");
 					getFullMessage(request, inputStream, 3);
 					if(Integer.parseInt(messageLines.get(2))<Server.this.getMyClock() || !imInterested){
-						System.out.println("Sending ack");
+						System.out.println("Sending ack from server " + ID + " to server " + messageLines.get(1));
 						Server.this.sendAcknowledgment(messageLines);
 					}else{
 						this.reqQueue.add(Integer.parseInt(messageLines.get(1)));
@@ -425,8 +436,13 @@ public class Server {
 					
 				//ACKNOWLEDGE
 				}else if(request.split(" ")[0].equalsIgnoreCase("acknowledge")){
+					System.out.println("Received an ack hooray");
 					getFullMessage(request, inputStream, 2);
-					replicas.get(Integer.parseInt(messageLines.get(1))).setAck(true);
+					System.out.println(messageLines.toString());
+					int s = Integer.parseInt(messageLines.get(1));
+					System.out.println("Trying to set ack of server " + s);
+					replicas.get(s-1).setAck(true);
+					System.out.println("After recieved ack: " + printReplicaSet());
 				//RECOVER
 				}else if(request.split(" ")[0].equalsIgnoreCase("recover")){
 					getFullMessage(request, inputStream, 4);
