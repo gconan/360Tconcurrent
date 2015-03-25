@@ -213,15 +213,19 @@ public class Server {
 	 */
 	public void sendRequestToServers() {
 		//send message to servers: request, id, clock
+		System.out.println("sending request to other server");
 		int i = 0;
 		while(i < replicas.size()){
+			int id = this.ID;
+			if(replicas.get(i).getID() == id){
+				i++;
+			}
 			String output;
 			int port = replicas.get(i).getPort();
 			InetAddress serverIP = replicas.get(i).getIP();
-			int id = this.ID;
 			int clock = this.getMyClock();
 			String message = "request" + "\n" + id + "\n" + clock;
-			
+			System.out.println("requesting server " + serverIP.toString() + " " + port + " try " + i);
 			try {
 				Socket server = new Socket();
 				server.connect(new InetSocketAddress(serverIP, port), 100);
@@ -235,6 +239,7 @@ public class Server {
 			} catch (Exception e) {
 				if(e.getClass() == SocketTimeoutException.class){
 					//try next server
+					System.out.println("socket timed out");
 					replicas.get(i).setAck(true); //set ack to true if we are assuming a crash
 					i++;
 				} else{
@@ -411,6 +416,7 @@ public class Server {
 				String request = inputStream.nextLine();
 				//REQUEST
 				if(request.split(" ")[0].equalsIgnoreCase("request")){
+					System.out.println("WE GOT A REQUEST");
 					getFullMessage(request, inputStream, 3);
 					if(Integer.parseInt(messageLines.get(2))<Server.this.getMyClock() || !imInterested){
 						Server.this.sendAcknowledgment(messageLines);
@@ -435,6 +441,7 @@ public class Server {
 					
 				//CLIENT
 				}else{
+					System.out.println("request from client");
 					imInterested = true;
 					Server.this.sendRequestToServers();	//wait (100ms) for all acks
 					String response = Server.this.process(request);

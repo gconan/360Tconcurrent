@@ -105,13 +105,13 @@ public class Client {
 				try {
 					Socket server = new Socket();
 					server.connect(new InetSocketAddress(serverIP, serverPort), 100);
-					connected= true;
+					connected = true;
 					Scanner din = new Scanner(server.getInputStream());
 					PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 					pout.println(call);
 					System.out.println("Sent request to server");
 					output = din.nextLine();
-					System.out.println(output);
+					System.out.println("Server response: " + output);
 					server.close();
 					din.close();
 					pout.close();
@@ -121,10 +121,17 @@ public class Client {
 						//try next server
 						System.out.println("Couldn't connect");
 						servList.get(i).setAck(true); //set ack to true if we are assuming a crash
-						i++;
+						i = (i + 1)%servList.size();
+						if(i == 0){
+							System.out.println("looping again");
+						}
 					} else{
 						System.out.println("I am confused");
 						System.err.println("Socket issues connecting client to server");
+						i = (i + 1)%servList.size();
+						if(i == 0){
+							System.out.println("looping again");
+						}
 					}
 				}	
 			}
@@ -153,7 +160,9 @@ public class Client {
 		int servs = c.inputFirstLine(sc.nextLine());
 		int count = 0; //number of servers specified in client input file
 		while(sc.hasNextLine()){
+			System.out.println("rest of input file");
 			c.inputLines(sc.nextLine(), count);
+			System.out.println("next line");
 			count++;
 		}
 		sc.close();
