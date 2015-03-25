@@ -229,8 +229,8 @@ public class Server {
 				Scanner din = new Scanner(server.getInputStream());
 				PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 				pout.println(message);
-				output = din.nextLine();
-				System.out.println(output);
+				//output = din.nextLine();
+				//System.out.println(output);
 				server.close();
 				din.close();
 				pout.flush();
@@ -412,6 +412,7 @@ public class Server {
 					System.out.println("WE GOT A REQUEST");
 					getFullMessage(request, inputStream, 3);
 					if(Integer.parseInt(messageLines.get(2))<Server.this.getMyClock() || !imInterested){
+						System.out.println("Sending ack");
 						Server.this.sendAcknowledgment(messageLines);
 					}else{
 						this.reqQueue.add(Integer.parseInt(messageLines.get(1)));
@@ -425,7 +426,7 @@ public class Server {
 				//ACKNOWLEDGE
 				}else if(request.split(" ")[0].equalsIgnoreCase("acknowledge")){
 					getFullMessage(request, inputStream, 2);
-					
+					replicas.get(Integer.parseInt(messageLines.get(1))).setAck(true);
 				//RECOVER
 				}else if(request.split(" ")[0].equalsIgnoreCase("recover")){
 					getFullMessage(request, inputStream, 4);
