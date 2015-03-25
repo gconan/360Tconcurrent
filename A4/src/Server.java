@@ -229,8 +229,8 @@ public class Server {
 				Scanner din = new Scanner(server.getInputStream());
 				PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 				pout.println(message);
-				//output = din.nextLine();
-				//System.out.println(output);
+				output = din.nextLine();
+				System.out.println(output);
 				server.close();
 				din.close();
 				pout.flush();
