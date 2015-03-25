@@ -45,16 +45,17 @@ public class Server {
 				line = scan.nextLine();
 				if(this.ID ==  i){
 					String[] ipconfig = line.split(":");
-					if(InetAddress.getLocalHost()==InetAddress.getByName(ipconfig[0])){
+					//if(InetAddress.getLocalHost()==InetAddress.getByName(ipconfig[0])){
 						int port = Integer.parseInt(ipconfig[1].trim());
 						try{
 							TCPSocket = new ServerSocket(port);
+							System.out.println("socket did not throw an exception, this socket open");//TODO remove
 						}catch(Exception e){
-							throw new Exception("TCP error: "+e.getLocalizedMessage());
+							throw new Exception("Possibility: the port is already in use on this machine. "+e.getLocalizedMessage());
 						}
-					}else{
-						throw new Exception("This ID is already linked to another IP address. Server not starting");
-					}
+//					}else{
+//						throw new Exception("This ID is already linked to another IP address. Server not starting");
+//					}
 				}
 				this.addNewReplica(line, i);
 			}
@@ -70,6 +71,7 @@ public class Server {
 	
 	private void addNewReplica(String line, int id) throws Exception{
 		String[] creds = line.split(":");
+		System.out.println("starting to add replica server. ip: "+creds[0]+" port: "+creds[1]);//TODO remove
 		if(creds.length!=2){
 			throw new Exception("Bad Input, cant add new replica server");
 		}else{
@@ -77,15 +79,16 @@ public class Server {
 			int port = 0;
 			try{
 				ip = InetAddress.getByName(creds[0]);
+				System.out.println("ip after inet conversion: "+ip.toString());//TODO remove
 			}catch(UnknownHostException e){
 				throw new Exception("Could not determine the IP address given. "+e.getMessage());
 			}
 			try{
 				port = Integer.parseInt(creds[1].trim());
+				System.out.println("port after int conversion: "+port);//TODO remove
 			}catch(NumberFormatException e){
 				throw new Exception("Could not determine the port number given. " + e.getMessage());
 			}
-			//TODO what do we do if the ip is local host vs not local host on the IDth add?
 			replicas.add(new ReplicaServers(id,ip, port));
 		}
 	}
