@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 
+
 public class TestServerInput {
 	String file;
 	String ip1;
@@ -135,5 +136,5 @@ public class TestServerInput {
 		Server server = new Server(scan);
 		assertEquals("Library server not started: Could not determine the port number given. For input string: \""+port+"\"\n", outContent.toString());
 	}
-
+	
 }

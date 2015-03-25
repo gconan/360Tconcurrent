@@ -90,6 +90,7 @@ public class Server {
 				throw new Exception("Could not determine the port number given. " + e.getMessage());
 			}
 			replicas.add(new ReplicaServers(id,ip, port));
+			System.out.println("replica set: \n"+this.printReplicaSet());//TODO remove
 		}
 	}
 	
@@ -236,7 +237,8 @@ public class Server {
 					replicas.get(i).setAck(true); //set ack to true if we are assuming a crash
 					i++;
 				} else{
-					System.err.println("Socket issues when sending requests");
+					System.err.println("Socket issues when sending requests");//TODO remove
+					i++;
 				}
 			}
 			
@@ -396,7 +398,7 @@ public class Server {
 		
 		@Override
 		public void run() {	//service client request
-			try {	//similar to serverThread on Professor Garg's github	
+			try {	//similar to serverThread on Professor Garg's github
 				Scanner inputStream = new Scanner(sock.getInputStream());
 				PrintWriter outputStream = new PrintWriter(sock.getOutputStream());
 				String request = inputStream.nextLine();
@@ -441,9 +443,9 @@ public class Server {
 			}
 		}
 		
-		private void getFullMessage(String request, Scanner inputStream, int messageLength){
+		protected void getFullMessage(String request, Scanner inputStream, int messageLength){
 			messageLines.add(request);
-			for(int i=0; i<messageLength; i++){
+			for(int i=0; i<messageLength-1; i++){
 				messageLines.add(inputStream.nextLine());
 			}
 		}
@@ -460,8 +462,10 @@ public class Server {
 		private ArrayList<int[]> crashes;
 		
 		protected TCP_librarian(ArrayList<int[]>crashCommands){
+			System.out.println("starting the librarian");//TODO remove
 			this.crashes = crashCommands;
 			if(this.crashes.size()>0){
+				System.out.println("setting crash stats");//TODO remove
 				this.current_k = this.crashes.get(0)[0];
 				this.current_delta = this.crashes.get(0)[1];
 			}
@@ -471,7 +475,9 @@ public class Server {
 		public void run() {
 			try {
 				Socket sock; 
+				System.out.println("Waiting for tcp socket to accept");//TODO remove
 				while((sock= TCPSocket.accept()) !=null){	//assignment inside the while condition so that it reassigns itself
+					System.out.println("socket accepted!");//TODO remove
 					this.current_k--;
 					humanResources.submit(new TCP_librarian_service(sock));
 					if(this.current_k==0){	//if no crash set, then current_k will be negative and never crash
