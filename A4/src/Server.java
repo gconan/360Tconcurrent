@@ -25,9 +25,8 @@ public class Server {
 	private int numOfServers;
 	private ArrayList<int[]> crashCommands;
 	private int myClock;
-	private InetAddress IP;
-	private int port;
-	private boolean csReady;
+	private InetAddress IP;//TODO init
+	private int port;//TODO init
 	
 	
 	/**
@@ -36,7 +35,6 @@ public class Server {
 	 */
 	public Server(Scanner scan){
 		this.myClock = 0;
-		this.csReady = false;
 		humanResources = Executors.newCachedThreadPool();
 		this.replicas = new ArrayList<ReplicaServers>();
 		this.crashCommands = new ArrayList<int[]>();
@@ -48,8 +46,7 @@ public class Server {
 				if(this.ID ==  i){
 					String[] ipconfig = line.split(":");
 					//if(InetAddress.getLocalHost()==InetAddress.getByName(ipconfig[0])){
-						port = Integer.parseInt(ipconfig[1].trim());
-						IP = InetAddress.getByName(ipconfig[0]);
+						int port = Integer.parseInt(ipconfig[1].trim());
 						try{
 							TCPSocket = new ServerSocket(port);
 							System.out.println("socket did not throw an exception, this socket open");//TODO remove
@@ -142,7 +139,7 @@ public class Server {
 	private void openDoorsForBusiness() {
 		//create socket monitors on both TCP and UDP and let the client requests flow
 			TCP_librarian librarian1 = new TCP_librarian(this.crashCommands);
-			System.out.println("submitting TCP listener on IP: "+IP+" on port: "+port);
+			
 			humanResources.submit(librarian1);
 			
 			while(true){
@@ -319,7 +316,7 @@ public class Server {
 		int i=0;
 		Socket socket = new Socket();
 		
-		while(!connected){
+		while(!connected && i<replicas.size()){
 			InetAddress receipientIP = replicas.get(0).getIP();
 			int port = replicas.get(0).getPort();
 			
@@ -328,7 +325,7 @@ public class Server {
 				connected = true;
 			}catch(Exception e){
 				if(e.getClass() == SocketTimeoutException.class){
-					i= (i+1)%replicas.size();
+					i+=1;
 				}else{
 					System.err.println("Socket issue");
 				}
@@ -441,6 +438,7 @@ public class Server {
 					System.out.println("request from client");
 					imInterested = true;
 					Server.this.sendRequestToServers();	//wait (100ms) for all acks
+					
 					String response = Server.this.process(request);
 					outputStream.println(response);
 				}
