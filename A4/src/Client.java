@@ -36,6 +36,7 @@ public class Client {
 		String[] lineOne = line.split(" ");
 		this.ID = lineOne[0];
 		this.numServs = Integer.parseInt(lineOne[1]);
+		System.out.println("Done parsing first line of client " + this.ID);
 		return numServs;
 	}
 	
@@ -56,6 +57,7 @@ public class Client {
 				e.printStackTrace();
 			}
 			int port = Integer.parseInt(words[1]);
+			System.out.println("parsed server with port " + port);
 			ReplicaServers tempServ = new ReplicaServers(count+1,tempIP,port);
 			servList.add(tempServ);
 		} else{
@@ -72,7 +74,7 @@ public class Client {
 				}
 				return;
 			}
-			
+			System.out.println("Parsed line " + action + " " + bookNumber);
 			serverCall(bookNumber, action);
 		}
 		
@@ -99,23 +101,28 @@ public class Client {
 				temp = servList.get(i);
 				serverIP = temp.getIP();
 				serverPort = temp.getPort();
+				System.out.println("Trying to connect to server " + serverIP.toString() + " on port " + serverPort);
 				try {
 					Socket server = new Socket();
 					server.connect(new InetSocketAddress(serverIP, serverPort), 100);
 					Scanner din = new Scanner(server.getInputStream());
 					PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 					pout.println(call);
+					System.out.println("Sent request to server");
 					output = din.nextLine();
 					System.out.println(output);
 					server.close();
 					din.close();
 					pout.close();
+					System.out.println("closed socket, printwriter, and scanner");
 				} catch (Exception e) {
 					if(e.getClass() == SocketTimeoutException.class){
 						//try next server
+						System.out.println("Couldn't connect");
 						servList.get(i).setAck(true); //set ack to true if we are assuming a crash
 						i++;
 					} else{
+						System.out.println("I am confused");
 						System.err.println("Socket issues connecting client to server");
 					}
 				}	
