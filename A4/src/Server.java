@@ -391,21 +391,24 @@ public class Server {
 		
 		while(!connected && i<replicas.size()){
 			if(replicas.get(i).getID() == this.ID){
-				i++;
+				i= (i+1)%replicas.size();
+				if(i==0)i=1;
 			}
 			InetAddress receipientIP = replicas.get(i).getIP();
 			int port = replicas.get(i).getPort();
 			try {
 				socket.connect(new InetSocketAddress(receipientIP , port), 100);
 				connected = true;
-			}catch(Exception e){
+			}catch(SocketTimeoutException e){
 				if(e.getClass() == SocketTimeoutException.class){
-					i+=1;
-				}else{
-					System.err.println("Socket issue");
+					i= (i+1)%replicas.size();
+					if(i==0)i=1;
 				}
+			} catch (IOException e) {
+				System.err.println("Server "+i+" must be dead");
 			}
-			i+=1;
+			i= (i+1)%replicas.size();
+			if(i==0)i=1;
 		}
 			//should have a connection to one of the servers
 			
@@ -423,7 +426,7 @@ public class Server {
 				pout.close();
 				socket.close();
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.err.println("Could not close socket after library recover");
 			}
 	}
 	
