@@ -224,7 +224,6 @@ public class Server {
 				replicas.get(i).setAck(true);
 				i++;
 			}else{
-				String output;
 				int port = replicas.get(i).getPort();
 				InetAddress serverIP = replicas.get(i).getIP();
 				try {
@@ -248,7 +247,6 @@ public class Server {
 						replicas.get(i).setAck(true); //set ack to true if we are assuming a crash
 						i++;
 					} else{
-						System.err.println("Socket issues when sending requests");//TODO remove
 						i++;
 					}
 				}
@@ -278,7 +276,6 @@ public class Server {
 				replicas.get(i).setAck(true);
 				i++;
 			}else{
-				String output;
 				int port = replicas.get(i).getPort();
 				InetAddress serverIP = replicas.get(i).getIP();
 				try {
@@ -302,7 +299,6 @@ public class Server {
 						replicas.get(i).setAck(true); //set ack to true if we are assuming a crash
 						i++;
 					} else{
-						System.err.println("Socket issues when sending requests");//TODO remove
 						i++;
 					}
 				}
@@ -367,7 +363,7 @@ public class Server {
 					pout.close();
 					socket.close();
 				}catch(IOException e){
-					//TODO what should we do if the server is dead, skip it?
+					System.err.println("Server "+i+" must be dead.");
 				}
 			}
 			i++;
@@ -375,14 +371,10 @@ public class Server {
 	}
 	
 	public void sendLibrary(PrintWriter pout){
-		try {
 			for(String s: library){
 				pout.println(s);
 				pout.flush();
 			}
-		}catch(Exception e){
-			System.out.println("cant send recovery message: "+e.getLocalizedMessage());//TODO throw exception?
-		}
 	}
 	
 	public void recoverLibrary() {
@@ -533,7 +525,6 @@ public class Server {
 					Server.this.sendRequestToServers();	//wait (100ms) for all acks
 					
 					String response = Server.this.process(request);
-					System.out.println("client request fulfilled\nlibrary: "+library.toString());//TODO
 					Server.this.updateReplicaLibraries();
 					sendRelease();
 					outputStream.println(response);
@@ -555,17 +546,12 @@ public class Server {
 				InetAddress receipientIP = Server.this.replicas.get(reqQueue.get(i)).getIP();//changed -1 bc of server shift
 				int port = Server.this.replicas.get(reqQueue.get(i)).getPort();//changed -1 bc of the 0 shift
 				try {
-						System.out.println("sending release to:"+receipientIP+" port: "+port);//TODO
 					Socket socket = new Socket(receipientIP , port);
 					Scanner in = new Scanner(socket.getInputStream());
-						System.out.println("aquired socket");
 					PrintWriter pout = new PrintWriter(socket.getOutputStream(), true);
-						System.out.println("about to send release message");//TODO
 					pout.println("release");
 					pout.flush();
-						System.out.println("waiting for green light to send remainder of message");
-					in.nextLine();//wait before sending rest of info
-						System.out.println("green light");//TODO
+					in.nextLine();//wait before sending rest of info TODO
 					pout.println(""+Server.this.ID);
 					pout.flush();
 					for(int j=0; j<library.size(); j++){
@@ -576,7 +562,6 @@ public class Server {
 					pout.close();
 					in.close();
 					socket.close();
-						System.out.println("release message & info sent and socket closed");
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -595,13 +580,10 @@ public class Server {
 		private ArrayList<int[]> crashes;
 		
 		protected TCP_librarian(ArrayList<int[]>crashCommands){
-			System.out.println("starting the librarian");//TODO remove
 			this.crashes = crashCommands;
 			if(this.crashes.size()>0){
-				System.out.println("setting crash stats");//TODO remove
 				this.current_k = this.crashes.get(0)[0];
 				this.current_delta = (long) this.crashes.get(0)[1];
-				System.out.println("current k: " + current_k + " current delta: " + current_delta);
 			}
 		}
 
@@ -609,9 +591,7 @@ public class Server {
 		public void run() {
 			try {
 				Socket sock; 
-				System.out.println("Waiting for tcp socket to accept");//TODO remove
 				while((sock= TCPSocket.accept()) !=null){	//assignment inside the while condition so that it reassigns itself
-					System.out.println("socket accepted!");//TODO remove
 					this.current_k--;
 					Server.this.finishedCommand.set(false);
 					humanResources.submit(new TCP_librarian_service(sock));
@@ -619,7 +599,6 @@ public class Server {
 					while(!Server.this.finishedCommand.get()){}
 					
 					if(this.current_k==0){	//if no crash set, then current_k will be negative and never crash
-						System.out.println("WE GONNA CRASH!!!");
 						this.crash();// not sure if crash is working
 					}
 					Server.this.clockUp();
@@ -632,19 +611,15 @@ public class Server {
 		
 		private void crash(){
 			if(crashes.size()>0){
-				System.out.println("attempting to crash...");
 				this.crashes.remove(0);
 				//Server.this.crash();
 				try{
 					TCPSocket.close();
-					System.out.println("sleeeeeping");
 					Thread.sleep(this.current_delta);
-					System.out.println("woke up!!");
 				}catch(InterruptedException e){
 					System.err.println("Thread Crash Interrupted: "+e.getLocalizedMessage());
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					System.err.println("Could not close TCP ServerSocket; crash may not be successfull");
 				}
 				//update to next crash command
 				if(this.crashes.size()>0){
@@ -661,10 +636,8 @@ public class Server {
 			try {
 				TCPSocket = new ServerSocket(port);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				System.err.println("Could not reopen TCP ServerSocket; probably total system failure....good luck");
 			}
-			System.out.println("Time to recover data");
 			Server.this.recoverLibrary();
 		}
 	}

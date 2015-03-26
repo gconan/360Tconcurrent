@@ -38,7 +38,6 @@ public class Client {
 		String[] lineOne = line.split(" ");
 		this.ID = lineOne[0];
 		this.numServs = Integer.parseInt(lineOne[1]);
-		System.out.println("Done parsing first line of client " + this.ID);
 		return numServs;
 	}
 	
@@ -59,7 +58,6 @@ public class Client {
 				e.printStackTrace();
 			}
 			int port = Integer.parseInt(words[1]);
-			System.out.println("parsed server with port " + port);
 			ReplicaServers tempServ = new ReplicaServers(count+1,tempIP,port);
 			servList.add(tempServ);
 		} else{
@@ -76,7 +74,6 @@ public class Client {
 				}
 				return;
 			}
-			System.out.println("Parsed line " + action + " " + bookNumber);
 			serverCall(bookNumber, action);
 		}
 		
@@ -103,7 +100,6 @@ public class Client {
 				temp = servList.get(i);
 				serverIP = temp.getIP();
 				serverPort = temp.getPort();
-				System.out.println("Trying to connect to server " + serverIP.toString() + " on port " + serverPort); //TODO do we ever try to connect to server 2??
 				try {
 					Socket server = new Socket();
 					server.connect(new InetSocketAddress(serverIP, serverPort), 100);
@@ -113,39 +109,29 @@ public class Client {
 					//Scanner din = new Scanner(server.getInputStream());
 					PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 					pout.println(call);
-					System.out.println("Sent request to server " + serverIP.toString() + serverPort);
 					if(!br.ready()){
 						Thread.sleep(100);
 					}
 					if(!br.ready()){
-						System.out.println("server couldn't connect");
 						i++;
 					}else{
 						output = br.readLine();
-						System.out.println("Connected to " + serverIP.toString() + serverPort);
-						System.out.println("Waiting for server response");
 						connected = true;
 						System.out.println("Server response: " + output);
 					}
 					server.close();
 					br.close();
 					pout.close();
-					System.out.println("closed socket, printwriter, and scanner");
 				} catch (Exception e) {
 					if(e.getClass() == SocketTimeoutException.class){
 						//try next server
-						System.out.println("Couldn't connect");
 						servList.get(i).setAck(true); //set ack to true if we are assuming a crash
 						i = (i + 1)%servList.size();
 						if(i == 0){
-							System.out.println("looping again");
 						}
 					} else{
-						System.out.println("I am confused");
-						System.err.println("Socket issues connecting client to server");
 						i = (i + 1)%servList.size();
 						if(i == 0){
-							System.out.println("looping again");
 						}
 					}
 				}	
@@ -175,9 +161,7 @@ public class Client {
 		int servs = c.inputFirstLine(sc.nextLine());
 		int count = 0; //number of servers specified in client input file
 		while(sc.hasNextLine()){
-			System.out.println("rest of input file");
 			c.inputLines(sc.nextLine(), count);
-			System.out.println("next line");
 			count++;
 		}
 		sc.close();
