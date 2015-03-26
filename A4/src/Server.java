@@ -508,6 +508,7 @@ public class Server {
 					this.current_k--;
 					humanResources.submit(new TCP_librarian_service(sock));
 					if(this.current_k==0){	//if no crash set, then current_k will be negative and never crash
+						System.out.println("CRASHING*****************************************");//TODO
 						this.crash();// not sure if crash is working
 					}
 					Server.this.clockUp();
