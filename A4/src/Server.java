@@ -47,7 +47,7 @@ public class Server {
 				line = scan.nextLine();
 				if(this.ID ==  i){
 					String[] ipconfig = line.split(":");
-					//if(InetAddress.getLocalHost()==InetAddress.getByName(ipconfig[0])){
+					if(InetAddress.getLocalHost().getHostAddress().equals(ipconfig[0]) || ipconfig[0].equals("127.0.0.1") || ipconfig[0].substring(0, 7).equals("127.0.0")){
 						int port = Integer.parseInt(ipconfig[1].trim());
 						try{
 							TCPSocket = new ServerSocket(port);
@@ -55,9 +55,9 @@ public class Server {
 						}catch(Exception e){
 							throw new Exception("Possibility: the port is already in use on this machine. "+e.getLocalizedMessage());
 						}
-//					}else{
-//						throw new Exception("This ID is already linked to another IP address. Server not starting");
-//					}
+					}else{
+						throw new Exception("This ID is already linked to another IP address. Server not starting");
+					}
 				}
 				this.addNewReplica(line, i);
 			}
