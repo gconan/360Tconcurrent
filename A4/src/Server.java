@@ -8,10 +8,8 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Scanner;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -28,8 +26,8 @@ public class Server {
 	private int numOfServers;
 	private ArrayList<int[]> crashCommands;
 	private int myClock;
-	private InetAddress IP;//TODO init
-	private int port;//TODO init
+	private InetAddress IP;
+	private int port;
 	private boolean csReady;
 	protected AtomicBoolean finishedCommand;
 	
@@ -231,11 +229,10 @@ public class Server {
 				String output;
 				int port = replicas.get(i).getPort();
 				InetAddress serverIP = replicas.get(i).getIP();
-				System.out.println("requesting server " + serverIP.toString() + " " + port + " try " + i);
+				System.out.println("0000requesting server " + serverIP.toString() + " " + port + " try " + i);
 				try {
 					Socket server = new Socket();
 					server.connect(new InetSocketAddress(serverIP, port), 100);
-					Scanner din = new Scanner(server.getInputStream());
 					PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 					pout.println("request");
 					pout.flush();
@@ -245,10 +242,10 @@ public class Server {
 					pout.flush();
 					//output = din.nextLine();
 					//System.out.println(output);
-					din.close();
 					pout.flush();
 					pout.close();
 					server.close();
+					System.out.println("0000 finished requesting server");
 				} catch (Exception e) {
 					if(e.getClass() == SocketTimeoutException.class){
 						//try next server
@@ -367,7 +364,8 @@ public class Server {
 			socket.close();
 			System.out.println("message sent and socket closed");
 		} catch (IOException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			//could be "sleeping"
 		}
 	
 	}
@@ -406,14 +404,6 @@ public class Server {
 			}
 		}catch(Exception e){
 			System.out.println("cant send recovery message: "+e.getLocalizedMessage());
-		}
-	}
-	
-	public void reconnect(){
-		try{
-			//TCPSocket = new ServerSocket(port);
-		}catch(Exception e){
-			System.out.println("reconnect failed, total system failure");
 		}
 	}
 	
@@ -556,6 +546,8 @@ public class Server {
 					
 				//UPDATE
 				}else if(request.equalsIgnoreCase("update")){
+					System.out.println("****************getting update***************");
+					System.out.println("lib before update:    "+library.toString()+"\n");
 					updateLib(inputStream);
 					
 				//RELEASE
@@ -570,6 +562,7 @@ public class Server {
 					replicas.get(s).setAck(true);
 				//RECOVER
 				}else if(request.equalsIgnoreCase("recover")){
+					System.out.println("sending recovery. Library: "+library.toString());
 					String id = inputStream.nextLine();
 					Server.this.sendRequestToServers(id);
 					Server.this.sendLibrary(outputStream);
@@ -582,6 +575,7 @@ public class Server {
 					Server.this.sendRequestToServers();	//wait (100ms) for all acks
 					
 					String response = Server.this.process(request);
+					System.out.println("client request fulfilled\nlibrary: "+library.toString());//TODO
 					Server.this.updateReplicaLibraries();
 					sendRelease();
 					outputStream.println(response);
@@ -684,11 +678,15 @@ public class Server {
 				this.crashes.remove(0);
 				//Server.this.crash();
 				try{
+					TCPSocket.close();
 					System.out.println("sleeeeeping");
 					Thread.sleep(this.current_delta);
 					System.out.println("woke up!!");
 				}catch(InterruptedException e){
 					System.err.println("Thread Crash Interrupted: "+e.getLocalizedMessage());
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 				//update to next crash command
 				if(this.crashes.size()>0){
@@ -701,6 +699,12 @@ public class Server {
 			}else{//could be unreachable code
 				this.current_k = 0;
 				this.current_delta = 0;
+			}
+			try {
+				TCPSocket = new ServerSocket(port);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 			System.out.println("Time to recover data");
 			Server.this.recoverLibrary();
