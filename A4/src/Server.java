@@ -326,15 +326,19 @@ public class Server {
 		}
 	}
 
-	public void processRelease(ArrayList<String> messageLines) {
-		int releaseID = Integer.parseInt(messageLines.get(1));
-		int bookNum = Integer.parseInt(messageLines.get(2));
-		String status = messageLines.get(3);
+	public void processRelease(Scanner input, PrintWriter pout) {
+		pout.println("incoming");
+		pout.flush();
+		String id = input.nextLine();
+		for(int i=0; i<library.size(); i++){
+			this.library.set(i, input.nextLine());
+		}
+		System.out.println("library recovered");//TODO
+		this.replicas.get(Integer.parseInt(id)).setAck(true);
 		
-		this.replicas.get(releaseID-1).setAck(true);
-		this.library.set(bookNum-1, status);
 		
 	}
+	
 
 	public void sendAcknowledgment(ArrayList<String> messageLines) {
 		String message = "acknowledge"+"\n"+this.ID;
@@ -349,8 +353,8 @@ public class Server {
 			PrintWriter pout = new PrintWriter(socket.getOutputStream(), true);
 			System.out.println("about to send ack message");//TODO
 			pout.println(message);
-			System.out.println("message sent");//TODO
 			pout.flush();
+			System.out.println("message sent");//TODO
 			pout.close();
 			socket.close();
 			System.out.println("message sent and socket closed");
@@ -360,23 +364,20 @@ public class Server {
 	
 	}
 	
-	public void sendLibraryRecover(ArrayList<String> messageLines){
-		String message = "";
-		for(String s: this.library){
-			message+=s +"\n";
-		}
-		message= message.substring(0, message.lastIndexOf("\n"));
+	public void sendLibraryRecover(ArrayList<String> messageLines, PrintWriter pout){
 		
-		InetAddress ip = replicas.get(Integer.parseInt(messageLines.get(1))).getIP();
-		int prt = replicas.get(Integer.parseInt(messageLines.get(1))).getPort();
-		System.out.println("Server "+this.ID+", sending:\n "+message +"\n to "+prt);//TODO
+//		InetAddress ip = replicas.get(Integer.parseInt(messageLines.get(1))).getIP();
+//		int prt = replicas.get(Integer.parseInt(messageLines.get(1))).getPort();
+//		System.out.println("Server "+this.ID+", sending to "+prt);//TODO
 		try {
-			Socket socket = new Socket(ip , prt);
-			PrintWriter pout = new PrintWriter(socket.getOutputStream(), true);
-			pout.println(message);
-			pout.flush();
-			pout.close();
-			socket.close();
+//			Socket socket = new Socket(ip , prt);
+			//PrintWriter pout = new PrintWriter(socket.getOutputStream(), true);
+			for(String s: library){
+				pout.println(s);
+				pout.flush();
+			}
+			//pout.close();
+			//socket.close();
 		}catch(Exception e){
 			System.out.println("cant send recovery message: "+e.getLocalizedMessage());
 		}
@@ -519,8 +520,7 @@ public class Server {
 					
 				//RELEASE
 				}else if(request.split(" ")[0].equalsIgnoreCase("release")){
-					getFullMessage(request, inputStream, 4);
-					Server.this.processRelease(messageLines);	//should contain library update
+					Server.this.processRelease(inputStream, outputStream);	//should contain library update
 					
 				//ACKNOWLEDGE
 				}else if(request.split(" ")[0].equalsIgnoreCase("acknowledge")){
@@ -532,7 +532,7 @@ public class Server {
 				}else if(request.split(" ")[0].equalsIgnoreCase("recover")){
 					getFullMessage(request, inputStream, 4);
 					Server.this.sendRequestToServers(messageLines.get(1));
-					Server.this.sendLibraryRecover(messageLines);
+					Server.this.sendLibraryRecover(messageLines, outputStream);
 					
 				//CLIENT
 				}else{
@@ -541,6 +541,7 @@ public class Server {
 					Server.this.sendRequestToServers();	//wait (100ms) for all acks
 					
 					String response = Server.this.process(request);
+					sendRelease();
 					outputStream.println(response);
 				}
 				outputStream.flush();
@@ -553,11 +554,45 @@ public class Server {
 			Server.this.finishedCommand.set(true);
 		}
 		
+		public void sendRelease(){
+			for(int i=0; i< reqQueue.size(); i++){
+				InetAddress receipientIP = Server.this.replicas.get(reqQueue.get(i)).getIP();//changed -1 bc of server shift
+				int port = Server.this.replicas.get(reqQueue.get(i)).getPort();//changed -1 bc of the 0 shift
+				try {
+					System.out.println("sending release to:"+receipientIP+" port: "+port);//TODO
+					Socket socket = new Socket(receipientIP , port);
+					Scanner in = new Scanner(socket.getInputStream());
+					System.out.println("aquired socket");
+					PrintWriter pout = new PrintWriter(socket.getOutputStream(), true);
+					System.out.println("about to send release message");//TODO
+					pout.println("release");
+					pout.flush();
+					System.out.println("waiting for green light to send remainder of message");
+					in.nextLine();//wait before sending rest of info
+					System.out.println("green light");//TODO
+					pout.println(""+Server.this.ID);
+					pout.flush();
+					for(int j=0; j<library.size(); j++){
+						pout.println(library.get(j));
+						pout.flush();
+					}
+					pout.flush();
+					pout.close();
+					in.close();
+					socket.close();
+					System.out.println("release message & info sent and socket closed");
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
 		protected void getFullMessage(String request, Scanner inputStream, int messageLength){
 			messageLines.add(request);
 			for(int i=0; i<messageLength-1; i++){
 				messageLines.add(inputStream.nextLine());
 			}
+			System.out.println("finished getting full message");//TODO
 		}
 	}
 	
