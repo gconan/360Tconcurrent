@@ -1,3 +1,5 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -101,19 +103,32 @@ public class Client {
 				temp = servList.get(i);
 				serverIP = temp.getIP();
 				serverPort = temp.getPort();
-				System.out.println("Trying to connect to server " + serverIP.toString() + " on port " + serverPort);
+				System.out.println("Trying to connect to server " + serverIP.toString() + " on port " + serverPort); //TODO do we ever try to connect to server 2??
 				try {
 					Socket server = new Socket();
 					server.connect(new InetSocketAddress(serverIP, serverPort), 100);
-					connected = true;
-					Scanner din = new Scanner(server.getInputStream());
+					//connected = true;
+					System.out.println("Connected to " + serverIP.toString() + serverPort);
+					BufferedReader br = new BufferedReader(new InputStreamReader(
+							server.getInputStream()));
+					//Scanner din = new Scanner(server.getInputStream());
 					PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 					pout.println(call);
-					System.out.println("Sent request to server");
-					output = din.nextLine();
-					System.out.println("Server response: " + output);
+					System.out.println("Sent request to server " + serverIP.toString() + serverPort);
+					if(!br.ready()){
+						Thread.sleep(100);
+					}
+					if(!br.ready()){
+						System.out.println("server couldn't connect");
+						i++;
+					}else{
+						output = br.readLine();
+						System.out.println("Waiting for server response");
+						connected = true;
+						System.out.println("Server response: " + output);
+					}
 					server.close();
-					din.close();
+					br.close();
 					pout.close();
 					System.out.println("closed socket, printwriter, and scanner");
 				} catch (Exception e) {
