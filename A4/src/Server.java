@@ -473,7 +473,6 @@ public class Server {
 			for(int i=0; i<messageLength-1; i++){
 				messageLines.add(inputStream.nextLine());
 			}
-			System.out.println(messageLines.toString());//TODO remove
 		}
 	}
 	
@@ -484,7 +483,7 @@ public class Server {
 	 */
 	protected class TCP_librarian implements Runnable{
 		private int current_k;
-		private int current_delta;
+		private long current_delta;
 		private ArrayList<int[]> crashes;
 		
 		protected TCP_librarian(ArrayList<int[]>crashCommands){
@@ -493,7 +492,7 @@ public class Server {
 			if(this.crashes.size()>0){
 				System.out.println("setting crash stats");//TODO remove
 				this.current_k = this.crashes.get(0)[0];
-				this.current_delta = this.crashes.get(0)[1];
+				this.current_delta = (long) this.crashes.get(0)[1];
 				System.out.println("current k: " + current_k + " current delta: " + current_delta);
 			}
 		}
@@ -508,7 +507,7 @@ public class Server {
 					this.current_k--;
 					humanResources.submit(new TCP_librarian_service(sock));
 					if(this.current_k==0){	//if no crash set, then current_k will be negative and never crash
-						System.out.println("CRASHING*****************************************");//TODO
+						System.out.println("WE GONNA CRASH!!!");
 						this.crash();// not sure if crash is working
 					}
 					Server.this.clockUp();
@@ -521,17 +520,20 @@ public class Server {
 		
 		private void crash(){
 			if(crashes.size()>0){
+				System.out.println("attempting to crash...");
 				this.crashes.remove(0);
-				Server.this.crash();
+				//Server.this.crash();
 				try{
+					System.out.println("sleeeeeping");
 					Thread.sleep(this.current_delta);
+					System.out.println("woke up!!");
 				}catch(InterruptedException e){
 					System.err.println("Thread Crash Interrupted: "+e.getLocalizedMessage());
 				}
 				//update to next crash command
 				if(this.crashes.size()>0){
 					this.current_k = this.crashes.get(0)[0];
-					this.current_delta = this.crashes.get(0)[1];
+					this.current_delta = (long) this.crashes.get(0)[1];
 				}else{//if out of crash commands, then set to zero, will not crash again
 					this.current_k = 0;
 					this.current_delta = 0;
@@ -540,6 +542,7 @@ public class Server {
 				this.current_k = 0;
 				this.current_delta = 0;
 			}
+			System.out.println("Time to recover data");
 			Server.this.recoverLibrary();
 		}
 	}
