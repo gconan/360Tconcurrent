@@ -108,7 +108,6 @@ public class Client {
 					Socket server = new Socket();
 					server.connect(new InetSocketAddress(serverIP, serverPort), 100);
 					//connected = true;
-					System.out.println("Connected to " + serverIP.toString() + serverPort);
 					BufferedReader br = new BufferedReader(new InputStreamReader(
 							server.getInputStream()));
 					//Scanner din = new Scanner(server.getInputStream());
@@ -123,6 +122,7 @@ public class Client {
 						i++;
 					}else{
 						output = br.readLine();
+						System.out.println("Connected to " + serverIP.toString() + serverPort);
 						System.out.println("Waiting for server response");
 						connected = true;
 						System.out.println("Server response: " + output);
