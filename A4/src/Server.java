@@ -8,9 +8,11 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * hosts a library server to which a client can make UDP or TCP requests to reserve/return books
@@ -29,16 +31,19 @@ public class Server {
 	private InetAddress IP;//TODO init
 	private int port;//TODO init
 	private boolean csReady;
+	protected AtomicBoolean finishedCommand;
 	
 	/**
 	 * constructor for the libarary server
 	 * takes in standard input and configures the server with the given information
 	 */
 	public Server(Scanner scan){
+		this.finishedCommand = new AtomicBoolean();
 		this.csReady = false;
 		this.myClock = 0;
 		humanResources = Executors.newCachedThreadPool();
 		this.replicas = new ArrayList<ReplicaServers>();
+		replicas.add(new ReplicaServers());
 		this.crashCommands = new ArrayList<int[]>();
 		try{
 			String line = scan.nextLine();
@@ -48,10 +53,9 @@ public class Server {
 				if(this.ID ==  i){
 					String[] ipconfig = line.split(":");
 					if(InetAddress.getLocalHost().getHostAddress().equals(ipconfig[0]) || ipconfig[0].equals("127.0.0.1") || ipconfig[0].substring(0, 7).equals("127.0.0")){
-						int port = Integer.parseInt(ipconfig[1].trim());
+						port = Integer.parseInt(ipconfig[1].trim());
 						try{
 							TCPSocket = new ServerSocket(port);
-							System.out.println("socket did not throw an exception, this socket open");//TODO remove
 						}catch(Exception e){
 							throw new Exception("Possibility: the port is already in use on this machine. "+e.getLocalizedMessage());
 						}
@@ -72,8 +76,8 @@ public class Server {
 	}
 	
 	private void addNewReplica(String line, int id) throws Exception{
+		System.out.println("adding at "+id+": "+line);//TODO
 		String[] creds = line.split(":");
-		System.out.println("starting to add replica server. ip: "+creds[0]+" port: "+creds[1]);//TODO remove
 		if(creds.length!=2){
 			throw new Exception("Bad Input, cant add new replica server");
 		}else{
@@ -81,18 +85,16 @@ public class Server {
 			int port = 0;
 			try{
 				ip = InetAddress.getByName(creds[0]);
-				System.out.println("ip after inet conversion: "+ip.toString());//TODO remove
 			}catch(UnknownHostException e){
 				throw new Exception("Could not determine the IP address given. "+e.getMessage());
 			}
 			try{
 				port = Integer.parseInt(creds[1].trim());
-				System.out.println("port after int conversion: "+port);//TODO remove
 			}catch(NumberFormatException e){
 				throw new Exception("Could not determine the port number given. " + e.getMessage());
 			}
-			replicas.add(new ReplicaServers(id,ip, port));
-			System.out.println("replica set: \n"+this.printReplicaSet());//TODO remove
+			replicas.add(new ReplicaServers());
+			replicas.set(id,new ReplicaServers(id,ip, port));
 		}
 	}
 	
@@ -212,8 +214,8 @@ public class Server {
 	 */
 	public void sendRequestToServers() {
 		//send message to servers: request, id, clock
-		System.out.println("sending request to other server" + this.printReplicaSet());
-		int i = 0;
+		System.out.println("sending requests to other servers: " + this.printReplicaSet());
+		int i = 1;
 		while(i < replicas.size()){
 			int id = this.ID;
 			if(replicas.get(i).getID() == id){
@@ -232,35 +234,96 @@ public class Server {
 				Scanner din = new Scanner(server.getInputStream());
 				PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 				pout.println(message);
-				output = din.nextLine();
+				//output = din.nextLine();
 				//System.out.println(output);
-				server.close();
 				din.close();
 				pout.flush();
 				pout.close();
+				server.close();
 			} catch (Exception e) {
 				if(e.getClass() == SocketTimeoutException.class){
 					//try next server
-					System.out.println("socket timed out");
+					System.out.println("socket timed out");//TODO
 					replicas.get(i).setAck(true); //set ack to true if we are assuming a crash
 					i++;
 				} else{
 					System.err.println("Socket issues when sending requests");//TODO remove
 					i++;
 				}
-			}	
+			}
+			i+=1;
 		}
-		
+		System.out.println("entering while loop to wait for all acks");//TODO
+		System.out.println(this.printReplicaSet());//TODO
 		while(!csReady){
 			csReady=true;
-			for(ReplicaServers s: replicas){
-				if(!s.hasAck()){
+			for(int j=1; i<replicas.size(); i++){
+				if(!replicas.get(j).hasAck()){
 					csReady=false;
 					break;
 				}
 			}
 		}
-		System.out.println("Out of ack loop");
+	}
+	
+	/**
+	 * send requests to each server for recovery. if one doesn't respond, assume dead and move along.
+	 */
+	public void sendRequestToServers(String s) {
+		int serverNum =Integer.parseInt(s);
+		//send message to servers: request, id, clock
+		System.out.println("222sending requests to other servers: " + this.printReplicaSet());
+		int i = 1;
+		while(i < replicas.size()){
+			int id = this.ID;
+			if(replicas.get(i).getID() == id || replicas.get(i).getID()== serverNum){
+				System.out.println("222setting "+i +" ack to true");//TODO
+				replicas.get(i).setAck(true);
+				i++;
+			}else{
+				String output;
+				int port = replicas.get(i).getPort();
+				InetAddress serverIP = replicas.get(i).getIP();
+				int clock = this.getMyClock();
+				String message = "request" + "\n" + id + "\n" + clock;
+				System.out.println("222requesting server " + serverIP.toString() + " " + port + " try " + i);
+				try {
+					Socket server = new Socket();
+					server.connect(new InetSocketAddress(serverIP, port), 100);
+					Scanner din = new Scanner(server.getInputStream());
+					PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
+					pout.println(message);
+					//output = din.nextLine();
+					//System.out.println(output);
+					din.close();
+					pout.flush();
+					pout.close();
+					server.close();
+				} catch (Exception e) {
+					if(e.getClass() == SocketTimeoutException.class){
+						//try next server
+						System.out.println("socket timed out");//TODO
+						replicas.get(i).setAck(true); //set ack to true if we are assuming a crash
+						i++;
+					} else{
+						System.err.println("Socket issues when sending requests");//TODO remove
+						i++;
+					}
+				}
+				i+=1;
+			}
+		}
+		System.out.println("222entering while loop to wait for all acks");//TODO
+		System.out.println("222"+this.printReplicaSet());//TODO
+		while(!csReady){
+			csReady=true;
+			for(int j=1; i<replicas.size(); i++){
+				if(!replicas.get(j).hasAck()){
+					csReady=false;
+					break;
+				}
+			}
+		}
 	}
 
 	public void processRelease(ArrayList<String> messageLines) {
@@ -275,19 +338,22 @@ public class Server {
 
 	public void sendAcknowledgment(ArrayList<String> messageLines) {
 		String message = "acknowledge"+"\n"+this.ID;
-		System.out.println("Server " + this.ID + " " + messageLines.toString());
 		int receipientId = Integer.parseInt(messageLines.get(1));
-		InetAddress receipientIP = replicas.get(receipientId-1).getIP();
-		int port = replicas.get(receipientId-1).getPort();
-		System.out.println("Server " + receipientIP.toString() + " port " + port);
-		
+		InetAddress receipientIP = replicas.get(receipientId).getIP();//changed -1 bc of server shift
+		int port = replicas.get(receipientId).getPort();//changed -1 bc of the 0 shift
+		System.out.println("Server "+this.ID+", sending:\n "+message +"\n to "+port);//TODO
 		try {
+			System.out.println("trying to get socket for IP:"+receipientIP+" port: "+port);//TODO
 			Socket socket = new Socket(receipientIP , port);
+			System.out.println("aquired socket");
 			PrintWriter pout = new PrintWriter(socket.getOutputStream(), true);
+			System.out.println("about to send ack message");//TODO
 			pout.println(message);
-			socket.close();
+			System.out.println("message sent");//TODO
 			pout.flush();
 			pout.close();
+			socket.close();
+			System.out.println("message sent and socket closed");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -303,7 +369,7 @@ public class Server {
 		
 		InetAddress ip = replicas.get(Integer.parseInt(messageLines.get(1))).getIP();
 		int prt = replicas.get(Integer.parseInt(messageLines.get(1))).getPort();
-		
+		System.out.println("Server "+this.ID+", sending:\n "+message +"\n to "+prt);//TODO
 		try {
 			Socket socket = new Socket(ip , prt);
 			PrintWriter pout = new PrintWriter(socket.getOutputStream(), true);
@@ -312,7 +378,15 @@ public class Server {
 			pout.close();
 			socket.close();
 		}catch(Exception e){
-			
+			System.out.println("cant send recovery message: "+e.getLocalizedMessage());
+		}
+	}
+	
+	public void reconnect(){
+		try{
+			//TCPSocket = new ServerSocket(port);
+		}catch(Exception e){
+			System.out.println("reconnect failed, total system failure");
 		}
 	}
 	
@@ -325,33 +399,47 @@ public class Server {
 		String message = "recover"+"\n"+ID+"\n"+IP+"\n"+port;
 		
 		boolean connected = false;
-		int i=0;
+		int i=1;
 		Socket socket = new Socket();
 		
 		while(!connected && i<replicas.size()){
-			InetAddress receipientIP = replicas.get(0).getIP();
-			int port = replicas.get(0).getPort();
-			
+			if(replicas.get(i).getID() == this.ID){
+				i++;
+			}
+			InetAddress receipientIP = replicas.get(i).getIP();
+			int port = replicas.get(i).getPort();
+			System.out.println("in recover library; about to connect to socket at :"+port);//TODO
 			try {
 				socket.connect(new InetSocketAddress(receipientIP , port), 100);
 				connected = true;
+				System.out.println("recover library: connected!");//TODO
 			}catch(Exception e){
 				if(e.getClass() == SocketTimeoutException.class){
+					System.out.println("recover library: socket timed out");//TODO
 					i+=1;
 				}else{
 					System.err.println("Socket issue");
 				}
 			}
+			i+=1;
+		}
 			//should have a connection to one of the servers
+			
 			try{
+				System.out.println("recover library: in try block");//TODO
 				PrintWriter pout = new PrintWriter(socket.getOutputStream(), true);
+				System.out.println("recover library: have print writer");//TODO
 				Scanner din = new Scanner(socket.getInputStream());
+				System.out.println("recover library: have scanner input");//TODO
 				pout.println(message);
+				System.out.println("recover library: message sent");//TODO
 				int j=0;
-				while(din.hasNextLine()){
+				while(j<this.library.size()){
 					library.set(j, din.nextLine());
+					System.out.println("next line from TCP recover: "+library.get(j));//TODO
 					j+=1;
 				}
+				System.out.println("after recover while loop");//TODO
 				din.close();
 				pout.flush();
 				pout.close();
@@ -359,7 +447,6 @@ public class Server {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}
 	}
 	
 	protected void clockUp(){
@@ -375,8 +462,8 @@ public class Server {
 	 */
 	protected String printReplicaSet(){
 		String result = "";
-		for(ReplicaServers s: this.replicas){
-			result+=s.toString()+" ";
+		for(int i=1; i<replicas.size(); i++){
+			result+=replicas.get(i).toString()+" ";
 		}
 		return result;
 	}
@@ -421,10 +508,10 @@ public class Server {
 				String request = inputStream.nextLine();
 				//REQUEST
 				if(request.split(" ")[0].equalsIgnoreCase("request")){
-					System.out.println("WE GOT A REQUEST");
+					System.out.println("WE GOT A REQUEST");//TODO
 					getFullMessage(request, inputStream, 3);
 					if(Integer.parseInt(messageLines.get(2))<Server.this.getMyClock() || !imInterested){
-						System.out.println("Sending ack from server " + ID + " to server " + messageLines.get(1));
+						System.out.println("Sending ack from server " + ID + " to server " + messageLines.get(1));//TODO
 						Server.this.sendAcknowledgment(messageLines);
 					}else{
 						this.reqQueue.add(Integer.parseInt(messageLines.get(1)));
@@ -437,22 +524,19 @@ public class Server {
 					
 				//ACKNOWLEDGE
 				}else if(request.split(" ")[0].equalsIgnoreCase("acknowledge")){
-					System.out.println("Received an ack hooray");
+					System.out.println("Received an ack hooray");//TODO
 					getFullMessage(request, inputStream, 2);
-					System.out.println(messageLines.toString());
 					int s = Integer.parseInt(messageLines.get(1));
-					System.out.println("Trying to set ack of server " + s);
 					replicas.get(s-1).setAck(true);
-					System.out.println("After recieved ack: " + printReplicaSet());
 				//RECOVER
 				}else if(request.split(" ")[0].equalsIgnoreCase("recover")){
 					getFullMessage(request, inputStream, 4);
-					Server.this.sendRequestToServers();
+					Server.this.sendRequestToServers(messageLines.get(1));
 					Server.this.sendLibraryRecover(messageLines);
 					
 				//CLIENT
 				}else{
-					System.out.println("request from client");
+					System.out.println("request from client");//TODO
 					imInterested = true;
 					Server.this.sendRequestToServers();	//wait (100ms) for all acks
 					
@@ -466,6 +550,7 @@ public class Server {
 			}catch (IOException e) {
 				System.err.println("Library server Shutdown: "+e);
 			}
+			Server.this.finishedCommand.set(true);
 		}
 		
 		protected void getFullMessage(String request, Scanner inputStream, int messageLength){
@@ -505,7 +590,11 @@ public class Server {
 				while((sock= TCPSocket.accept()) !=null){	//assignment inside the while condition so that it reassigns itself
 					System.out.println("socket accepted!");//TODO remove
 					this.current_k--;
+					Server.this.finishedCommand.set(false);
 					humanResources.submit(new TCP_librarian_service(sock));
+					
+					while(!Server.this.finishedCommand.get()){}
+					
 					if(this.current_k==0){	//if no crash set, then current_k will be negative and never crash
 						System.out.println("WE GONNA CRASH!!!");
 						this.crash();// not sure if crash is working

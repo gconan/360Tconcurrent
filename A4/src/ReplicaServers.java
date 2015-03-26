@@ -11,6 +11,16 @@ public class ReplicaServers {
 	private boolean requested;
 	private boolean acknowledged;
 	
+	public ReplicaServers(){
+		this.alive = true;
+		this.id = 0;
+		this.ip = null;
+		this.port = 0;
+		this.timeStamp = 0;
+		this.requested = true;
+		this.acknowledged = true;
+	}
+	
 	public ReplicaServers( int ID, InetAddress IP, int prt){
 		this.alive = true;
 		this.id = ID;
@@ -22,7 +32,6 @@ public class ReplicaServers {
 	}
 	
 	public void setAck(boolean b){
-		System.out.println("Attempting to set ack");
 		this.acknowledged = b;
 	}
 	
