@@ -75,6 +75,13 @@ public class Server {
 		}
 	}
 	
+	/**
+	 * adds replica at index== id
+	 * zero'th replica is a dummy with ack==true all the time
+	 * @param line
+	 * @param id
+	 * @throws Exception
+	 */
 	private void addNewReplica(String line, int id) throws Exception{
 		System.out.println("adding at "+id+": "+line);//TODO
 		String[] creds = line.split(":");
@@ -232,7 +239,6 @@ public class Server {
 					PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 					pout.println("request");
 					pout.flush();
-					din.nextLine();//wait for handshake
 					pout.println(this.ID);
 					pout.flush();
 					pout.println(this.getMyClock());
@@ -273,13 +279,13 @@ public class Server {
 	/**
 	 * send requests to each server for recovery. if one doesn't respond, assume dead and move along.
 	 */
-	public void sendRequestToServers(String s) {
-		int serverNum =Integer.parseInt(s);
+	public void sendRequestToServers(String dontSendtoThisID) {
+		int _dontSendtoThisID =Integer.parseInt(dontSendtoThisID);
 		//send message to servers: request, id, clock
 		System.out.println("222sending requests to other servers: " + this.printReplicaSet());
 		int i = 1;
 		while(i < replicas.size()){
-			if(replicas.get(i).getID() == this.ID || replicas.get(i).getID()== serverNum){
+			if(replicas.get(i).getID() == this.ID || replicas.get(i).getID()== _dontSendtoThisID){
 				System.out.println("222setting "+i +" ack to true");//TODO
 				replicas.get(i).setAck(true);
 				i++;
@@ -295,14 +301,10 @@ public class Server {
 					PrintWriter pout = new PrintWriter(server.getOutputStream(), true);
 					pout.println("request");
 					pout.flush();
-					din.nextLine();//wait for handshake
-					System.out.println("received handshake from server accepting my request");//TODO
 					pout.println(this.ID);
 					pout.flush();
 					pout.println(this.getMyClock());
 					pout.flush();
-					//output = din.nextLine();
-					//System.out.println(output);
 					din.close();
 					pout.flush();
 					pout.close();
@@ -334,14 +336,12 @@ public class Server {
 		}
 	}
 
-	public void processRelease(Scanner input, PrintWriter pout) {
-		pout.println("incoming");
-		pout.flush();
+	public void processRelease(Scanner input) {
 		String id = input.nextLine();
 		for(int i=0; i<library.size(); i++){
 			this.library.set(i, input.nextLine());
 		}
-		System.out.println("library recovered");//TODO
+		System.out.println("library updated");//TODO
 		this.replicas.get(Integer.parseInt(id)).setAck(true);
 		
 		
@@ -372,20 +372,38 @@ public class Server {
 	
 	}
 	
-	public void sendLibraryRecover(PrintWriter pout){
-		
-//		InetAddress ip = replicas.get(Integer.parseInt(messageLines.get(1))).getIP();
-//		int prt = replicas.get(Integer.parseInt(messageLines.get(1))).getPort();
-//		System.out.println("Server "+this.ID+", sending to "+prt);//TODO
+	public void updateReplicaLibraries(){
+		int i = 1;
+		while(i < replicas.size()){
+			if(replicas.get(i).getID() != this.ID){
+				int port = replicas.get(i).getPort();
+				InetAddress serverIP = replicas.get(i).getIP();
+				System.out.println("requesting server " + serverIP.toString() + " " + port + " try " + i);//TODO
+				try {
+					Socket socket = new Socket();
+					socket.connect(new InetSocketAddress(serverIP, port), 100);
+					PrintWriter pout = new PrintWriter(socket.getOutputStream(), true);
+					pout.println("update");
+					pout.flush();
+					this.sendLibrary(pout);
+					pout.flush();
+					pout.close();
+					socket.close();
+				}catch(IOException e){
+					System.out.println("timeout");//TODO
+					//TODO what should we do if the server is dead, skip it?
+				}
+			}
+			i++;
+		}
+	}
+	
+	public void sendLibrary(PrintWriter pout){
 		try {
-//			Socket socket = new Socket(ip , prt);
-			//PrintWriter pout = new PrintWriter(socket.getOutputStream(), true);
 			for(String s: library){
 				pout.println(s);
 				pout.flush();
 			}
-			//pout.close();
-			//socket.close();
 		}catch(Exception e){
 			System.out.println("cant send recovery message: "+e.getLocalizedMessage());
 		}
@@ -458,6 +476,14 @@ public class Server {
 			}
 	}
 	
+	public void updateLib(Scanner din){
+		
+		for(int j=0; j<library.size(); j++){
+			library.set(j, din.nextLine());
+			System.out.println("next line from TCP recover: "+library.get(j));//TODO
+		}
+	}
+	
 	protected void clockUp(){
 		this.myClock++;
 	}
@@ -515,23 +541,27 @@ public class Server {
 				String request = inputStream.nextLine();
 				//REQUEST
 				if(request.equalsIgnoreCase("request")){
-					System.out.println("WE GOT A REQUEST");//TODO
-					outputStream.println("handshake");
-					System.out.println("handshake sent");//TODO
+						System.out.println("WE GOT A REQUEST");//TODO
 					String id = inputStream.nextLine();
-					System.out.println("id accepted: "+id);//TODO
+						System.out.println("id accepted ");//TODO
 					int clock = Integer.parseInt(inputStream.nextLine());
-					System.out.println("got clock: "+clock);//TODO
+						System.out.println("got clock: "+clock);//TODO
 					if(clock<Server.this.getMyClock() || !imInterested){
-						System.out.println("Sending ack from server " + ID + " to server " + id);//TODO
+							System.out.println("Sending ack from server " + ID + " to server " + id);//TODO
 						Server.this.sendAcknowledgment(Integer.parseInt(id));
+						Server.this.replicas.get(Integer.parseInt(id)).setAck(false);
 					}else{
 						this.reqQueue.add(Integer.parseInt(id));
 					}
 					
+				//UPDATE
+				}else if(request.equalsIgnoreCase("update")){
+					updateLib(inputStream);
+					
 				//RELEASE
 				}else if(request.equalsIgnoreCase("release")){
-					Server.this.processRelease(inputStream, outputStream);	//should contain library update
+					System.out.println("getting a release message");
+					Server.this.processRelease(inputStream);	//should contain library update
 					
 				//ACKNOWLEDGE
 				}else if(request.equalsIgnoreCase("acknowledge")){
@@ -542,7 +572,8 @@ public class Server {
 				}else if(request.equalsIgnoreCase("recover")){
 					String id = inputStream.nextLine();
 					Server.this.sendRequestToServers(id);
-					Server.this.sendLibraryRecover(outputStream);
+					Server.this.sendLibrary(outputStream);
+					sendRelease();
 					
 				//CLIENT
 				}else{
@@ -551,9 +582,11 @@ public class Server {
 					Server.this.sendRequestToServers();	//wait (100ms) for all acks
 					
 					String response = Server.this.process(request);
+					Server.this.updateReplicaLibraries();
 					sendRelease();
 					outputStream.println(response);
 					imInterested = false;
+					
 				}
 				outputStream.flush();
 		        outputStream.close();
@@ -570,17 +603,17 @@ public class Server {
 				InetAddress receipientIP = Server.this.replicas.get(reqQueue.get(i)).getIP();//changed -1 bc of server shift
 				int port = Server.this.replicas.get(reqQueue.get(i)).getPort();//changed -1 bc of the 0 shift
 				try {
-					System.out.println("sending release to:"+receipientIP+" port: "+port);//TODO
+						System.out.println("sending release to:"+receipientIP+" port: "+port);//TODO
 					Socket socket = new Socket(receipientIP , port);
 					Scanner in = new Scanner(socket.getInputStream());
-					System.out.println("aquired socket");
+						System.out.println("aquired socket");
 					PrintWriter pout = new PrintWriter(socket.getOutputStream(), true);
-					System.out.println("about to send release message");//TODO
+						System.out.println("about to send release message");//TODO
 					pout.println("release");
 					pout.flush();
-					System.out.println("waiting for green light to send remainder of message");
+						System.out.println("waiting for green light to send remainder of message");
 					in.nextLine();//wait before sending rest of info
-					System.out.println("green light");//TODO
+						System.out.println("green light");//TODO
 					pout.println(""+Server.this.ID);
 					pout.flush();
 					for(int j=0; j<library.size(); j++){
@@ -591,7 +624,7 @@ public class Server {
 					pout.close();
 					in.close();
 					socket.close();
-					System.out.println("release message & info sent and socket closed");
+						System.out.println("release message & info sent and socket closed");
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
