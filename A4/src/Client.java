@@ -55,7 +55,7 @@ public class Client {
 			try {
 				tempIP = InetAddress.getByName(words[0]);
 			} catch (UnknownHostException e) {
-				e.printStackTrace();
+				System.err.println("Unknown Host Exception");
 			}
 			int port = Integer.parseInt(words[1]);
 			ReplicaServers tempServ = new ReplicaServers(count+1,tempIP,port);
@@ -68,9 +68,9 @@ public class Client {
 				try {
 					Thread.sleep(Integer.parseInt(words[1]));
 				} catch (NumberFormatException e) {
-					e.printStackTrace();
+					System.err.println("Bad input for sleep time.");
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					System.err.println("Interruped Exception.");
 				}
 				return;
 			}
