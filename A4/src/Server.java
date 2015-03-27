@@ -363,7 +363,7 @@ public class Server {
 					pout.close();
 					socket.close();
 				}catch(IOException e){
-					System.err.println("Server "+i+" must be dead.");
+					System.err.println("Server "+i+" must be dead. In Update");
 				}
 			}
 			i++;
@@ -387,28 +387,40 @@ public class Server {
 		
 		boolean connected = false;
 		int i=1;
-		Socket socket = new Socket();
+		Socket socket = null;
 		
 		while(!connected && i<replicas.size()){
+			socket = new Socket();
 			if(replicas.get(i).getID() == this.ID){
 				i= (i+1)%replicas.size();
 				if(i==0)i=1;
-			}
-			InetAddress receipientIP = replicas.get(i).getIP();
-			int port = replicas.get(i).getPort();
-			try {
-				socket.connect(new InetSocketAddress(receipientIP , port), 100);
-				connected = true;
-			}catch(SocketTimeoutException e){
-				if(e.getClass() == SocketTimeoutException.class){
-					i= (i+1)%replicas.size();
-					if(i==0)i=1;
+			}else{
+				InetAddress receipientIP = replicas.get(i).getIP();
+				int port = replicas.get(i).getPort();
+				try {
+					socket.connect(new InetSocketAddress(receipientIP , port), 100);
+					connected = true;
+				}catch(SocketTimeoutException e){
+					try {
+						socket.close();
+					} catch (IOException e1) {
+						System.err.println("Coulnt close socket after Socket Timeout");
+					}
+					if(e.getClass() == SocketTimeoutException.class){
+						i= (i+1)%replicas.size();
+						if(i==0)i=1;
+					}
+				} catch (IOException e) {
+					try {
+						socket.close();
+					} catch (IOException e1) {
+						System.err.println("Coulnt close socket after IO Exception");
+					}
+					System.err.println("Server "+i+" must be dead. In Recover. "+e.getLocalizedMessage());
 				}
-			} catch (IOException e) {
-				System.err.println("Server "+i+" must be dead");
+				i= (i+1)%replicas.size();
+				if(i==0)i=1;
 			}
-			i= (i+1)%replicas.size();
-			if(i==0)i=1;
 		}
 			//should have a connection to one of the servers
 			
