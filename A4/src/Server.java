@@ -363,7 +363,7 @@ public class Server {
 					pout.close();
 					socket.close();
 				}catch(IOException e){
-					System.err.println("Server "+i+" must be dead. In Update");
+					//System.err.println("Server "+i+" must be dead. In Update");
 				}
 			}
 			i++;
@@ -404,7 +404,7 @@ public class Server {
 					try {
 						socket.close();
 					} catch (IOException e1) {
-						System.err.println("Coulnt close socket after Socket Timeout");
+						//System.err.println("Coulnt close socket after Socket Timeout");
 					}
 					if(e.getClass() == SocketTimeoutException.class){
 						i= (i+1)%replicas.size();
@@ -414,9 +414,9 @@ public class Server {
 					try {
 						socket.close();
 					} catch (IOException e1) {
-						System.err.println("Coulnt close socket after IO Exception");
+						//System.err.println("Coulnt close socket after IO Exception");
 					}
-					System.err.println("Server "+i+" must be dead. In Recover. "+e.getLocalizedMessage());
+					//System.err.println("Server "+i+" must be dead. In Recover. "+e.getLocalizedMessage());
 				}
 				i= (i+1)%replicas.size();
 				if(i==0)i=1;
@@ -438,7 +438,7 @@ public class Server {
 				pout.close();
 				socket.close();
 			} catch (IOException e) {
-				System.err.println("Could not close socket after library recover");
+				//System.err.println("Could not close socket after library recover");
 			}
 	}
 	
@@ -551,7 +551,7 @@ public class Server {
 		        inputStream.close();
 		        sock.close();
 			}catch (IOException e) {
-				System.err.println("Library server Shutdown: "+e);
+				//System.err.println("Library server Shutdown: "+e);
 			}
 			Server.this.finishedCommand.set(true);
 		}
@@ -619,7 +619,7 @@ public class Server {
 					Server.this.clockUp();
 				}
 			} catch (IOException e) {
-				System.err.println("Library server Shutdown: "+e);
+				//System.err.println("Library server Shutdown: "+e);
 			}
 			
 		}
@@ -632,9 +632,9 @@ public class Server {
 					TCPSocket.close();
 					Thread.sleep(this.current_delta);
 				}catch(InterruptedException e){
-					System.err.println("Thread Crash Interrupted: "+e.getLocalizedMessage());
+					//System.err.println("Thread Crash Interrupted: "+e.getLocalizedMessage());
 				} catch (IOException e) {
-					System.err.println("Could not close TCP ServerSocket; crash may not be successfull");
+					//System.err.println("Could not close TCP ServerSocket; crash may not be successfull");
 				}
 				//update to next crash command
 				if(this.crashes.size()>0){
@@ -651,7 +651,7 @@ public class Server {
 			try {
 				TCPSocket = new ServerSocket(port);
 			} catch (IOException e) {
-				System.err.println("Could not reopen TCP ServerSocket; probably total system failure....good luck");
+				//System.err.println("Could not reopen TCP ServerSocket; probably total system failure....good luck");
 			}
 			Server.this.recoverLibrary();
 		}
