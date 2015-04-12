@@ -158,7 +158,9 @@ public class Server {
 	
 	protected void crash(){
 		for(int i=0; i<this.library.size(); i++){
-			this.library.set(i, "available");
+			//this.library.set(i, "available"); 
+			//TA said we do not have to do anything except be a useless server
+			//this means that we use the last known data (this helps a lot for one server configuration)
 		}
 	}
 	
@@ -384,12 +386,13 @@ public class Server {
 		// reserved
 		//....line number cooresponds to booknum-1
 		String message = "recover"+"\n"+ID+"\n"+IP+"\n"+port;
-		
+		int timeout = 0;
 		boolean connected = false;
 		int i=1;
 		Socket socket = null;
 		
-		while(!connected && i<replicas.size()){
+		while((!connected && i<replicas.size())&&timeout<10000){
+			timeout++;
 			socket = new Socket();
 			if(replicas.get(i).getID() == this.ID){
 				i= (i+1)%replicas.size();
